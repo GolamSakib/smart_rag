@@ -1,10 +1,14 @@
 fastapi
-uvicorn
+uvicorn[standard]
 faiss-cpu
 transformers
 torch
 Pillow
-ollama
 langchain
 langchain-community
-langchain-experimental
+langchain-openai
+mysql-connector-python
+python-dotenv
+httpx
+requests
+pydantic
