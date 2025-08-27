@@ -25,7 +25,7 @@ class Settings:
     # OpenAI
     LLM_MODEL = "openai/gpt-oss-20b:free"
     LLM_BASE_URL = "https://openrouter.ai/api/v1"
-    LLM_API_KEY = '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'
+    LLM_API_KEY = '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'
     LLM_MAX_TOKENS = 300
     LLM_TEMPERATURE = 0.7
     

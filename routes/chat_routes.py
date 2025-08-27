@@ -187,14 +187,14 @@ async def receive_webhook(request: Request):
                 print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "files": bool(files)})
                 if files:
                     response = await client.post(
-                        "https://b0e59f6cdaea.ngrok-free.app/chat",
+                        "http://127.0.0.1:8000/chat",
                         data={"text": incoming_msg, "session_id": session_id},
                         files=files,
                         timeout=30.0
                     )
                 else:
                     response = await client.post(
-                        "https://b0e59f6cdaea.ngrok-free.app/chat",
+                        "http://127.0.0.1:8000/chat",
                         data={"text": incoming_msg, "session_id": session_id},
                         timeout=30.0
                     )

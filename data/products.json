@@ -70,5 +70,14 @@
         "code": "A4",
         "marginal_price": 1099.0,
         "image_path": "product-image\\12.webp"
+    },
+    {
+        "id": 18,
+        "name": "Zara Satin Effect Slip Dress",
+        "description": "A sleek, ankle-length slip dress with a smooth satin finish, featuring a straight cut and thin straps, ideal for evening wear or dressed-up occasions.",
+        "price": 2500.0,
+        "code": "A5",
+        "marginal_price": 1096.0,
+        "image_path": "product-image\\WhatsApp Image 2025-08-27 at 2.38.16 PM.jpeg"
     }
 ]
