@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+faiss-cpu
+transformers
+torch
+Pillow
+ollama
+langchain
+langchain-community
+langchain-experimental

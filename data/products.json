@@ -1,0 +1,182 @@
+[
+    {
+        "id": 2,
+        "name": "Stylish Sunglasses",
+        "description": "Protect your eyes in style with these fashionable sunglasses. They offer 100% UV protection and are made with a lightweight, durable frame.",
+        "price": 75.0,
+        "code": "A2",
+        "marginal_price": 49.0,
+        "image_path": "product-image\\gVR36Lqf2O7FwavP1W5Vb1DN2176PccMgBaDh8md.jpeg"
+    },
+    {
+        "id": 2,
+        "name": "Stylish Sunglasses",
+        "description": "Protect your eyes in style with these fashionable sunglasses. They offer 100% UV protection and are made with a lightweight, durable frame.",
+        "price": 75.0,
+        "code": "A2",
+        "marginal_price": 49.0,
+        "image_path": "product-image\\mZkTvuBHtbZRrEhmn3kfuLTsosiWhJK8n1TX2wWx.jpeg"
+    },
+    {
+        "id": 2,
+        "name": "Stylish Sunglasses",
+        "description": "Protect your eyes in style with these fashionable sunglasses. They offer 100% UV protection and are made with a lightweight, durable frame.",
+        "price": 75.0,
+        "code": "A2",
+        "marginal_price": 49.0,
+        "image_path": "product-image\\PgNUB3MB1dScDwD8g178hLTbfMiGhYLANEANWgX1.jpeg"
+    },
+    {
+        "id": 3,
+        "name": "Classic Leather Jacket",
+        "description": "A timeless classic, this leather jacket is made from 100% genuine leather. It features a classic design with a modern twist, making it perfect for any occasion.",
+        "price": 300.0,
+        "code": "A1",
+        "marginal_price": 100.0,
+        "image_path": "product-image\\gVR36Lqf2O7FwavP1W5Vb1DN2176PccMgBaDh8md.jpeg"
+    },
+    {
+        "id": 3,
+        "name": "Classic Leather Jacket",
+        "description": "A timeless classic, this leather jacket is made from 100% genuine leather. It features a classic design with a modern twist, making it perfect for any occasion.",
+        "price": 300.0,
+        "code": "A1",
+        "marginal_price": 100.0,
+        "image_path": "product-image\\mZkTvuBHtbZRrEhmn3kfuLTsosiWhJK8n1TX2wWx.jpeg"
+    },
+    {
+        "id": 3,
+        "name": "Classic Leather Jacket",
+        "description": "A timeless classic, this leather jacket is made from 100% genuine leather. It features a classic design with a modern twist, making it perfect for any occasion.",
+        "price": 300.0,
+        "code": "A1",
+        "marginal_price": 100.0,
+        "image_path": "product-image\\BuTBgognC8wpIV8hgrQWR1vdfie3OpPUw2QXAMX9.jpeg"
+    },
+    {
+        "id": 4,
+        "name": "Comfortable Running Shoes",
+        "description": "These running shoes are designed for maximum comfort and performance. They feature a breathable mesh upper and a cushioned sole to provide support and reduce impact.",
+        "price": 120.0,
+        "code": "A3",
+        "marginal_price": 80.0,
+        "image_path": "product-image\\3qI92lUMFGDsmVHxhqmuFLwtj2Vu8trOCigpltqc.jpeg"
+    },
+    {
+        "id": 4,
+        "name": "Comfortable Running Shoes",
+        "description": "These running shoes are designed for maximum comfort and performance. They feature a breathable mesh upper and a cushioned sole to provide support and reduce impact.",
+        "price": 120.0,
+        "code": "A3",
+        "marginal_price": 80.0,
+        "image_path": "product-image\\4At1wUManRCxXeyQqqkTLvBJ541lpQfs4qR8csxs.jpeg"
+    },
+    {
+        "id": 5,
+        "name": "Everlane The Daytripper Shirtdress",
+        "description": "A versatile midi shirtdress made from lightweight cotton, featuring a relaxed fit, button-down front, and side slits, perfect for casual or workwear styling.",
+        "price": 200.0,
+        "code": "A4",
+        "marginal_price": 150.0,
+        "image_path": "product-image\\4At1wUManRCxXeyQqqkTLvBJ541lpQfs4qR8csxs.jpeg"
+    },
+    {
+        "id": 5,
+        "name": "Everlane The Daytripper Shirtdress",
+        "description": "A versatile midi shirtdress made from lightweight cotton, featuring a relaxed fit, button-down front, and side slits, perfect for casual or workwear styling.",
+        "price": 200.0,
+        "code": "A4",
+        "marginal_price": 150.0,
+        "image_path": "product-image\\8VOM14brHrgULhqxBY7RH66jQ0i3TM1TMhRDDYAf.jpeg"
+    },
+    {
+        "id": 6,
+        "name": "Reformation Mason Dress",
+        "description": "A flowy, floral-patterned midi dress with a V-neckline and adjustable straps, crafted from sustainable viscose, ideal for everyday wear or special occasions.",
+        "price": 500.0,
+        "code": "A5",
+        "marginal_price": 397.0,
+        "image_path": "product-image\\BuTBgognC8wpIV8hgrQWR1vdfie3OpPUw2QXAMX9.jpeg"
+    },
+    {
+        "id": 7,
+        "name": "ASOS DESIGN Wrap Maxi Dress",
+        "description": "A long-sleeve maxi dress with a flattering wrap front and tie waist, made from soft polyester, available in vibrant prints for a chic, effortless look.",
+        "price": 2000.0,
+        "code": "A6",
+        "marginal_price": 1800.0,
+        "image_path": "product-image\\AmyCBXJ5V2XfUypQrRJikKIVEbaWeJDvoFAjsv1v.jpeg"
+    },
+    {
+        "id": 7,
+        "name": "ASOS DESIGN Wrap Maxi Dress",
+        "description": "A long-sleeve maxi dress with a flattering wrap front and tie waist, made from soft polyester, available in vibrant prints for a chic, effortless look.",
+        "price": 2000.0,
+        "code": "A6",
+        "marginal_price": 1800.0,
+        "image_path": "product-image\\BuTBgognC8wpIV8hgrQWR1vdfie3OpPUw2QXAMX9.jpeg"
+    },
+    {
+        "id": 8,
+        "name": "Madewell Slip Dress",
+        "description": "A minimalist silk-blend slip dress with a straight silhouette and delicate straps, perfect for layering or wearing solo, available in neutral tones for versatile styling.",
+        "price": 700.0,
+        "code": "A7",
+        "marginal_price": 600.0,
+        "image_path": "product-image\\product-2.webp"
+    },
+    {
+        "id": 8,
+        "name": "Madewell Slip Dress",
+        "description": "A minimalist silk-blend slip dress with a straight silhouette and delicate straps, perfect for layering or wearing solo, available in neutral tones for versatile styling.",
+        "price": 700.0,
+        "code": "A7",
+        "marginal_price": 600.0,
+        "image_path": "product-image\\shordaha-image2.jpg"
+    },
+    {
+        "id": 8,
+        "name": "Madewell Slip Dress",
+        "description": "A minimalist silk-blend slip dress with a straight silhouette and delicate straps, perfect for layering or wearing solo, available in neutral tones for versatile styling.",
+        "price": 700.0,
+        "code": "A7",
+        "marginal_price": 600.0,
+        "image_path": "product-image\\3qI92lUMFGDsmVHxhqmuFLwtj2Vu8trOCigpltqc.jpeg"
+    },
+    {
+        "id": 9,
+        "name": "Zara Satin Effect Slip Dress",
+        "description": "A sleek, ankle-length slip dress with a smooth satin finish, featuring a straight cut and thin straps, ideal for evening wear or dressed-up occasions.",
+        "price": 2500.0,
+        "code": "A8",
+        "marginal_price": 2000.0,
+        "image_path": "product-image\\product-2.webp"
+    },
+    {
+        "id": 9,
+        "name": "Zara Satin Effect Slip Dress",
+        "description": "A sleek, ankle-length slip dress with a smooth satin finish, featuring a straight cut and thin straps, ideal for evening wear or dressed-up occasions.",
+        "price": 2500.0,
+        "code": "A8",
+        "marginal_price": 2000.0,
+        "image_path": "product-image\\shordaha-image2.jpg"
+    },
+    {
+        "id": 10,
+        "name": "H&M Knit Sweater Dress",
+        "description": "A cozy ribbed knit dress with a fitted silhouette and long sleeves, made from a soft wool-blend, perfect for cooler days or casual winter outfits.",
+        "price": 4500.0,
+        "code": "A9",
+        "marginal_price": 98.0,
+        "image_path": "product-image\\product-3.webp"
+    },
+    {
+        "id": 10,
+        "name": "H&M Knit Sweater Dress",
+        "description": "A cozy ribbed knit dress with a fitted silhouette and long sleeves, made from a soft wool-blend, perfect for cooler days or casual winter outfits.",
+        "price": 4500.0,
+        "code": "A9",
+        "marginal_price": 98.0,
+        "image_path": "product-image\\8VOM14brHrgULhqxBY7RH66jQ0i3TM1TMhRDDYAf.jpeg"
+    }
+]

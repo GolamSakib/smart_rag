@@ -1,0 +1,291 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart RAG Admin</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { padding: 20px; }
+        .image-gallery { display: flex; flex-wrap: wrap; gap: 15px; }
+        .image-item { position: relative; }
+        .image-item img { width: 150px; height: 150px; object-fit: cover; cursor: pointer; border: 2px solid transparent; }
+        .image-item.selected img { border-color: blue; }
+        .image-item .delete-btn { position: absolute; top: 5px; right: 5px; display: none; }
+        .image-item:hover .delete-btn { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Smart RAG Admin</h1>
+
+        <!-- Image Management -->
+        <div class="card mb-4">
+            <div class="card-header">Image Management</div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="imageUpload">Upload Image</label>
+                    <input type="file" class="form-control-file" id="imageUpload" multiple>
+                </div>
+                <button class="btn btn-primary" onclick="uploadImage()">Upload</button>
+                <hr>
+                <h5>Image Gallery</h5>
+                <div id="imageGallery" class="image-gallery"></div>
+            </div>
+        </div>
+
+        <!-- Product Management -->
+        <div class="card mb-4">
+            <div class="card-header">Product Management</div>
+            <div class="card-body">
+                <form id="productForm">
+                    <input type="hidden" id="productId">
+                    <div class="form-group">
+                        <label for="productName">Name</label>
+                        <input type="text" class="form-control" id="productName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="productDescription">Description</label>
+                        <textarea class="form-control" id="productDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="productPrice">Price</label>
+                            <input type="number" class="form-control" id="productPrice" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="productCode">Code</label>
+                            <input type="text" class="form-control" id="productCode" required>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="marginalPrice">Marginal Price</label>
+                            <input type="number" class="form-control" id="marginalPrice" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Images</label>
+                        <div id="productImageGallery" class="image-gallery"></div>
+                    </div>
+                    <button type="submit" class="btn btn-success">Save Product</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Product Showcase -->
+        <div class="card mb-4">
+            <div class="card-header">Product Showcase</div>
+            <div class="card-body">
+                <form id="filterForm" class="form-inline mb-3">
+                    <input type="text" class="form-control mr-2" id="filterName" placeholder="Name">
+                    <input type="text" class="form-control mr-2" id="filterCode" placeholder="Code">
+                    <input type="number" class="form-control mr-2" id="filterMinPrice" placeholder="Min Price">
+                    <input type="number" class="form-control mr-2" id="filterMaxPrice" placeholder="Max Price">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </form>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Code</th>
+                            <th>Images</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Training -->
+        <div class="card">
+            <div class="card-header">Training</div>
+            <div class="card-body">
+                <button class="btn btn-warning" onclick="generateJson()">Generate JSON</button>
+                <button class="btn btn-danger" onclick="trainModel()">Train Model</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        // --- Image Management ---
+        async function uploadImage() {
+            const input = document.getElementById('imageUpload');
+            if (input.files.length === 0) return;
+
+            const formData = new FormData();
+            for (const file of input.files) {
+                formData.append('files', file);
+            }
+
+            await fetch(`${API_URL}/api/images`, {
+                method: 'POST',
+                body: formData
+            });
+            input.value = '';
+            loadImages();
+        }
+
+        async function loadImages() {
+            const response = await fetch(`${API_URL}/api/images`);
+            const images = await response.json();
+            const gallery = document.getElementById('imageGallery');
+            const productGallery = document.getElementById('productImageGallery');
+            gallery.innerHTML = '';
+            productGallery.innerHTML = '';
+
+            images.forEach(image => {
+                // Main gallery
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                item.innerHTML = `
+                    <img src="${image.image_path}" alt="Image">
+                    <button class="btn btn-danger btn-sm delete-btn" onclick="deleteImage(${image.id})">X</button>
+                `;
+                gallery.appendChild(item);
+
+                // Product form gallery
+                const productItem = document.createElement('div');
+                productItem.className = 'image-item';
+                productItem.dataset.imageId = image.id;
+                productItem.innerHTML = `<img src="${image.image_path}" alt="Image">`;
+                productItem.onclick = () => {
+                    productItem.classList.toggle('selected');
+                };
+                productGallery.appendChild(productItem);
+            });
+        }
+
+        async function deleteImage(id) {
+            if (!confirm('Are you sure you want to delete this image?')) return;
+            await fetch(`${API_URL}/api/images/${id}`, { method: 'DELETE' });
+            loadImages();
+        }
+
+        // --- Product Management ---
+        document.getElementById('productForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('productId').value;
+            const selectedImages = Array.from(document.querySelectorAll('#productImageGallery .image-item.selected'))
+                                        .map(item => parseInt(item.dataset.imageId));
+
+            const product = {
+                name: document.getElementById('productName').value,
+                description: document.getElementById('productDescription').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                code: document.getElementById('productCode').value,
+                marginal_price: parseFloat(document.getElementById('marginalPrice').value),
+                image_ids: selectedImages
+            };
+
+            const url = id ? `${API_URL}/api/products/${id}` : `${API_URL}/api/products`;
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+            });
+
+            resetForm();
+            loadProducts();
+        };
+
+        function resetForm() {
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            document.querySelectorAll('#productImageGallery .image-item.selected').forEach(item => item.classList.remove('selected'));
+        }
+
+        async function loadProducts() {
+            const params = new URLSearchParams();
+            const name = document.getElementById('filterName').value;
+            const code = document.getElementById('filterCode').value;
+            const minPrice = document.getElementById('filterMinPrice').value;
+            const maxPrice = document.getElementById('filterMaxPrice').value;
+
+            if (name) params.append('name', name);
+            if (code) params.append('code', code);
+            if (minPrice) params.append('min_price', minPrice);
+            if (maxPrice) params.append('max_price', maxPrice);
+
+            const response = await fetch(`${API_URL}/api/products?${params.toString()}`);
+            const products = await response.json();
+            const tableBody = document.getElementById('productTableBody');
+            tableBody.innerHTML = '';
+
+            products.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.description}</td>
+                    <td>${product.price}</td>
+                    <td>${product.code}</td>
+                    <td>${product.images.map(img => `<img src="${img}" width="50">`).join(' ')}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick='editProduct(${JSON.stringify(product)})'>Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function editProduct(product) {
+            document.getElementById('productId').value = product.id;
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productDescription').value = product.description;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productCode').value = product.code;
+            document.getElementById('marginalPrice').value = product.marginal_price;
+
+            // Select images
+            document.querySelectorAll('#productImageGallery .image-item').forEach(item => {
+                if (product.image_ids.includes(parseInt(item.dataset.imageId))) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Are you sure you want to delete this product?')) return;
+            await fetch(`${API_URL}/api/products/${id}`, { method: 'DELETE' });
+            loadProducts();
+        }
+
+        document.getElementById('filterForm').onsubmit = (e) => {
+            e.preventDefault();
+            loadProducts();
+        };
+
+        // --- Training ---
+        async function generateJson() {
+            await fetch(`${API_URL}/api/generate-json`, { method: 'POST' });
+            alert('products.json has been generated.');
+        }
+
+        async function trainModel() {
+            const response = await fetch(`${API_URL}/api/train`, { method: 'POST' });
+            const result = await response.json();
+            if (response.ok) {
+                alert('Training complete!\n' + result.output);
+            } else {
+                alert('Training failed:\n' + result.detail);
+            }
+        }
+
+        // Initial load
+        window.onload = () => {
+            loadImages();
+            loadProducts();
+        };
+    </script>
+</body>
+</html>
