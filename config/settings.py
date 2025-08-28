@@ -11,10 +11,10 @@ class Settings:
     
     # Database Configuration
     DB_CONFIG = {
-        'user': 'root',
-        'password': '',
-        'host': 'localhost',
-        'database': 'smart_rag',
+        'user': os.getenv('DB_USER', 'root'),
+        'password': os.getenv('DB_PASSWORD', ''),
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'database': os.getenv('DB_NAME', 'smart_rag'),
     }
     
     # Model Configuration
@@ -23,18 +23,16 @@ class Settings:
     
     # LLM Configuration
     # OpenAI
-    LLM_MODEL = "openai/gpt-oss-20b:free"
-    LLM_BASE_URL = "https://openrouter.ai/api/v1"
-    LLM_API_KEY = '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'
-    LLM_MAX_TOKENS = 300
+    # LLM_MODEL = "openai/gpt-oss-20b:free"
+    # LLM_BASE_URL = "https://openrouter.ai/api/v1"
+    # LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
+    LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.7
     
-    # Ollama
-    # LLM_MODEL = "mistral:latest"
-    # LLM_BASE_URL = "http://localhost:11434/v1"
-    # LLM_API_KEY = "not-needed"
-    # LLM_MAX_TOKENS = 300
-    # LLM_TEMPERATURE = 0.7
+    # Ollama (uncomment to use)
+    LLM_MODEL = "mistral:latest"
+    LLM_BASE_URL = "http://localhost:11434/v1"
+    LLM_API_KEY = "not-needed"
     
     # File Paths
     VECTOR_STORES_PATH = "vector_stores"
@@ -47,7 +45,7 @@ class Settings:
     CORS_ORIGINS = ["*"]
     
     # Server Configuration
-    HOST = "127.0.0.1"
-    PORT = 8000
+    HOST = os.getenv('HOST', '127.0.0.1')
+    PORT = int(os.getenv('PORT', 8000))
 
 settings = Settings() 

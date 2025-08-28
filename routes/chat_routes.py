@@ -26,7 +26,7 @@ session_memories = defaultdict(lambda: {
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
     template=(
-        "You are a helpful sales assistant. ALWAYS respond in Bengali, using a polite, natural, and persuasive conversational tone.\n"
+        "You are a helpful sales assistant. ALWAYS respond in English, using a polite, natural, and persuasive conversational tone.\n"
         "When mentioning product details (name, description, price), preserve them exactly as they appear in the context without translation.\n"
         "Use the context and chat history to answer the user's query.\n"
         "If the user uploads an image or asks about a product, provide the product name, description, and price (exclude marginal price).\n"
@@ -94,6 +94,7 @@ async def chat(
     context = "\nAvailable products:\n"
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Description: {product['description']}, Price: {product['price']}, Marginal Price: {product['marginal_price']}\n"
+    print(context)
 
     # Define query
     user_query = text.strip() if text else "Provide the name, description, and price of the product in the uploaded image."
@@ -118,13 +119,31 @@ async def chat(
     })
 
 
-def send_to_facebook(recipient_id: str, message_text: str):
-    """Send message back to user via Facebook Graph API."""
-    payload = {
-        "messaging_type": "RESPONSE",
-        "recipient": {"id": recipient_id},
-        "message": {"text": message_text}
-    }
+def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str = None):
+    """Send message or image back to user via Facebook Graph API."""
+    if image_url:
+        # Send image
+        payload = {
+            "messaging_type": "RESPONSE",
+            "recipient": {"id": recipient_id},
+            "message": {
+                "attachment": {
+                    "type": "image",
+                    "payload": {
+                        "url": image_url,
+                        "is_reusable": True
+                    }
+                }
+            }
+        }
+    else:
+        # Send text message
+        payload = {
+            "messaging_type": "RESPONSE",
+            "recipient": {"id": recipient_id},
+            "message": {"text": message_text}
+        }
+    
     response = requests.post(
         settings.FB_GRAPH_URL,
         json=payload,
@@ -132,6 +151,7 @@ def send_to_facebook(recipient_id: str, message_text: str):
     )
     if response.status_code != 200:
         print(f"Error sending message: {response.text}")
+    return response.status_code == 200
 
 
 @router.get("/webhook")
