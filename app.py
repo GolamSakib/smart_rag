@@ -265,7 +265,15 @@ async def chat(
         session_data["last_products"] = retrieved_products
 
     # Remove duplicates
-    retrieved_products = [dict(t) for t in {tuple(d.items()) for d in retrieved_products}]
+    seen_products = set()
+    unique_products = []
+    for product in retrieved_products:
+        # Create a unique identifier for each product based on its name and code
+        identifier = (product.get('name', '').strip(), product.get('code', '').strip())
+        if identifier not in seen_products:
+            seen_products.add(identifier)
+            unique_products.append(product)
+    retrieved_products = unique_products
     
 
     # Build context

@@ -23,16 +23,16 @@ class Settings:
     
     # LLM Configuration
     # OpenAI
-    # LLM_MODEL = "openai/gpt-oss-20b:free"
-    # LLM_BASE_URL = "https://openrouter.ai/api/v1"
-    # LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
+    LLM_MODEL = "openai/gpt-oss-20b:free"
+    LLM_BASE_URL = "https://openrouter.ai/api/v1"
+    LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
     LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.7
     
     # Ollama (uncomment to use)
-    LLM_MODEL = "mistral:latest"
-    LLM_BASE_URL = "http://localhost:11434/v1"
-    LLM_API_KEY = "not-needed"
+    # LLM_MODEL = "mistral:latest"
+    # LLM_BASE_URL = "http://localhost:11434/v1"
+    # LLM_API_KEY = "not-needed"
     
     # File Paths
     VECTOR_STORES_PATH = "vector_stores"
