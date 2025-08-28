@@ -29,7 +29,7 @@ prompt = PromptTemplate(
         "You are a helpful sales assistant. ALWAYS respond in English, using a polite, natural, and persuasive conversational tone.\n"
         "When mentioning product details (name, description, price), preserve them exactly as they appear in the context without translation.\n"
         "Use the context and chat history to answer the user's query.\n"
-        "If the user uploads an image or asks about a product, provide the product name, description, and price (exclude marginal price).\n"
+        "If the user uploads images or asks about a product, provide the product name, description, and price (exclude marginal price).\n"
         "If the user asks 'pp' or similar (case-insensitive), respond only with the price of the most relevant product from the context and the price should be always in taka.\n"
         "If the user asks whether the product looks exactly like the image (e.g., 'hubohu chobir moto'), respond persuasively with: "
         "'হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।'\n"
@@ -97,7 +97,7 @@ async def chat(
     print(context)
 
     # Define query
-    user_query = text.strip() if text else "Provide the name, description, and price of the product in the uploaded image."
+    user_query = text.strip() if text else "Provide the name, description, and price of the products in the uploaded images."
 
     if any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
         bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
