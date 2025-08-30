@@ -1,23 +1,28 @@
-# Python
+# Python bytecode and cache
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.env
+
+# Virtual environments
 venv/
 env/
+*.env
+
+# SQLite and database files
 *.sqlite3
 *.db
 
-# VS Code
+# VS Code settings
 .vscode/
 
-# OS files
+# OS-specific files
 .DS_Store
 Thumbs.db
 
 # Logs
 *.log
+*.log.*
 
 # Data and model artifacts
 data/
@@ -26,6 +31,7 @@ vector_stores/
 
 # Environment files
 .env
+.env.*
 
 # Images and uploads
 product-image/
@@ -37,3 +43,26 @@ uploads/
 # Jupyter Notebooks
 *.ipynb
 .ipynb_checkpoints/
+
+# Test and coverage outputs
+htmlcov/
+.coverage
+.tox/
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Node.js (if used for frontend)
+node_modules/
+npm-debug.log
+
+# Backup and swap files
+*.swp
+*.bak
+
+# Docker
+*.env.local
+docker-compose.override.yml
