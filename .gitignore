@@ -1,6 +1,39 @@
-# Environment variables
-.env
-.env.local
-.env.production
-.env.staging
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+venv/
+env/
+*.sqlite3
+*.db
 
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Data and model artifacts
+data/
+vector_stores/
+*.json
+
+# Environment files
+.env
+
+# Images and uploads
+product-image/
+uploads/
+
+# FAISS indexes
+*.index
+
+# Jupyter Notebooks
+*.ipynb
+.ipynb_checkpoints/
