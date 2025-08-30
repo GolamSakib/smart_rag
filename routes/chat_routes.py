@@ -13,6 +13,7 @@ import requests
 
 from services.model_manager import model_manager
 from config.settings import settings
+from services.database_service import db_service
 
 router = APIRouter()
 
@@ -131,6 +132,14 @@ async def chat(
         inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
         response = chain.invoke(inputs)
         bot_response = response.content
+
+    # Increment message count
+    try:
+        with db_service.get_cursor() as (cursor, connection):
+            cursor.execute("UPDATE business_settings SET value = value + 1 WHERE `key` = 'number_of_message'")
+            connection.commit()
+    except Exception as e:
+        print(f"Error incrementing message count: {e}")
 
     # Save to memory
     memory.save_context({"user_query": user_query}, {"output": bot_response})
