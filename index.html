@@ -275,6 +275,7 @@
         async function trainModel() {
             const response = await fetch(`${API_URL}/api/train`, { method: 'POST' });
             const result = await response.json();
+            console.log(result);
             if (response.ok) {
                 alert('Training complete!\n' + result.output);
             } else {
