@@ -122,7 +122,7 @@ async def chat(
         if text_vector_store is None:
             return JSONResponse(status_code=500, content={"error": "Text search not available"})
             
-        docs = text_vector_store.similarity_search(text, k=3)
+        docs = text_vector_store.similarity_search(text, k=1)
         for doc in docs:
             retrieved_products.append(doc.metadata)
         session_data["last_products"] = retrieved_products
