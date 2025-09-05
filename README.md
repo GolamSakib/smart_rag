@@ -111,7 +111,7 @@ python start.py fast
 ## 🔧 API Endpoints
 
 ### Chat
-- `POST /chat` - Main chat endpoint
+- `POST /api/chat` - Main chat endpoint
 - `GET /webhook` - Facebook webhook verification
 - `POST /webhook` - Facebook message handling
 

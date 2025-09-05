@@ -86,7 +86,7 @@ def validate_offer_price(response: str, products: List[dict]) -> str:
     
     return response
 
-@router.post("/chat")
+@router.post("/api/chat")
 async def chat(
     images: Optional[List[UploadFile]] = File(None),
     text: Optional[str] = Form(None),
