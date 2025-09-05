@@ -44,7 +44,7 @@ prompt = PromptTemplate(
         "🛍 আপনি প্রোডাক্ট হাতে পাবার পর ভালোভাবে দেখে তবেই টাকা পরিশোধ করবেন (Cash on Delivery)。'\n"
         "If the user asks to bargain (e.g., 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', or similar phrases), respond persuasively in Bengali, offering a discount calculated as follows: "
         "1. Select the most relevant product from the context based on the user's query or chat history.\n"
-        "2. Calculate the offer price by applying a 5-10% discount on the listed price, but ensure the offer price is never below the marginal price provided in the context.\n"
+        "2. Calculate the offer price by applying a 5-10% discount on the listed price, ensuring the offer price is a whole number (no fractional values) and never below the marginal price provided in the context.\n"
         "3. Present the offer price in the response, for example: "
         "'আপনার জন্য আমরা বিশেষ ছাড় দিচ্ছি! দামটা একটু কমিয়ে [offer price] টাকা করতে পারি, এর চেয়ে ভালো ডিল পাবেন না! এখনই অর্ডার করলে দ্রুত ডেলিভারি নিশ্চিত।'\n"
         "If asked about delivery, respond in Bengali: "
@@ -156,21 +156,21 @@ async def chat(
         response = chain.invoke(inputs)
         bot_response = response.content
         
-        bargaining_keywords = [
-        "dam komano", "ektu komano", "dam ta onk", "eto dam kno", "komano jay kina", "komano jay na",
-        "dam kombe", "kom koren", "kom kore den", "dam onik beshi", "onek dami", "koto discount",
-        "discount pabo", "sera dam", "offer ache", "kom korun", "dam beshi", "kom dame", "discount din",
-        "price reduce", "bargain", "too expensive", "lower price", "can you reduce", "dam koman",
-        "dam ta kom korun", "ektu kom korun", "dam onek beshi", "kom daben", "discount diben", "beshi dam",
-        "দাম কমানো", "একটু কমানো", "দামটা অনেক", "এত দাম কেনো", "কমানো যায় কিনা", "কমানো যায় না",
-        "দাম কমবে", "কম করেন", "কম করে দেন", "দাম অনেক বেশি", "অনেক দামি", "কত ডিসকাউন্ট",
-        "ডিসকাউন্ট পাবো", "সেরা দাম", "অফার আছে", "কম করুন", "দাম বেশি", "কম দামে", "ডিসকাউন্ট দিন",
-        "দাম কমান", "দামটা কম করুন", "একটু কম করুন", "দাম অনেক বেশি", "কম দাবেন", "ডিসকাউন্ট দিবেন",
-        "বেশি দাম"
-    ]
+    #     bargaining_keywords = [
+    #     "dam komano", "ektu komano", "dam ta onk", "eto dam kno", "komano jay kina", "komano jay na",
+    #     "dam kombe", "kom koren", "kom kore den", "dam onik beshi", "onek dami", "koto discount",
+    #     "discount pabo", "sera dam", "offer ache", "kom korun", "dam beshi", "kom dame", "discount din",
+    #     "price reduce", "bargain", "too expensive", "lower price", "can you reduce", "dam koman",
+    #     "dam ta kom korun", "ektu kom korun", "dam onek beshi", "kom daben", "discount diben", "beshi dam",
+    #     "দাম কমানো", "একটু কমানো", "দামটা অনেক", "এত দাম কেনো", "কমানো যায় কিনা", "কমানো যায় না",
+    #     "দাম কমবে", "কম করেন", "কম করে দেন", "দাম অনেক বেশি", "অনেক দামি", "কত ডিসকাউন্ট",
+    #     "ডিসকাউন্ট পাবো", "সেরা দাম", "অফার আছে", "কম করুন", "দাম বেশি", "কম দামে", "ডিসকাউন্ট দিন",
+    #     "দাম কমান", "দামটা কম করুন", "একটু কম করুন", "দাম অনেক বেশি", "কম দাবেন", "ডিসকাউন্ট দিবেন",
+    #     "বেশি দাম"
+    # ]
 
-    if any(k in user_query.lower() for k in bargaining_keywords):
-      bot_response = validate_offer_price(bot_response, retrieved_products)
+    # if any(k in user_query.lower() for k in bargaining_keywords):
+    #   bot_response = validate_offer_price(bot_response, retrieved_products)
 
     # Increment message count
     try:
