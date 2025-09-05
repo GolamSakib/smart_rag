@@ -10,6 +10,7 @@ from collections import defaultdict
 import numpy as np
 import httpx
 import requests
+import re
 
 from services.model_manager import model_manager
 from config.settings import settings
@@ -23,7 +24,7 @@ session_memories = defaultdict(lambda: {
     "last_products": []  # Store last retrieved products
 })
 
-# Updated Prompt template
+# Updated Prompt template with discount calculation rule
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
     template=(
@@ -41,7 +42,10 @@ prompt = PromptTemplate(
         "📱 মোবাইল নাম্বারটি দিন।\n"
         "💰 চিন্তার কিছু নেই — আমরা কোনো রকম এডভান্স নেই না।\n"
         "🛍 আপনি প্রোডাক্ট হাতে পাবার পর ভালোভাবে দেখে তবেই টাকা পরিশোধ করবেন (Cash on Delivery)。'\n"
-        "If the user asks to bargain (e.g., 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', or similar phrases), respond persuasively in Bengali, offering a discount without mentioning 'marginal price' or 'margin.' For example: "
+        "If the user asks to bargain (e.g., 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', or similar phrases), respond persuasively in Bengali, offering a discount calculated as follows: "
+        "1. Select the most relevant product from the context based on the user's query or chat history.\n"
+        "2. Calculate the offer price by applying a 5-10% discount on the listed price, but ensure the offer price is never below the marginal price provided in the context.\n"
+        "3. Present the offer price in the response, for example: "
         "'আপনার জন্য আমরা বিশেষ ছাড় দিচ্ছি! দামটা একটু কমিয়ে [offer price] টাকা করতে পারি, এর চেয়ে ভালো ডিল পাবেন না! এখনই অর্ডার করলে দ্রুত ডেলিভারি নিশ্চিত।'\n"
         "If asked about delivery, respond in Bengali: "
         "'আমরা সারা বাংলাদেশে \"ফুল ক্যাশ অন\" হোম ডেলিভারি করে থাকি।\n"
@@ -60,6 +64,27 @@ prompt = PromptTemplate(
     )
 )
 
+def validate_offer_price(response: str, products: List[dict]) -> str:
+    """
+    Validate the offered price in the bot's response to ensure it is not below the marginal price.
+    If below, adjust to the marginal price of the most relevant product.
+    """
+    if not products:
+        return response
+    
+    # Assume the first product is the most relevant
+    marginal_price = float(products[0]["marginal_price"])
+    print(f"Marginal price of the most relevant product: {marginal_price}")
+    
+    # Extract the offered price from the response (assuming format like "[number] টাকা")
+    match = re.search(r'(\d+\.?\d*)\s*টাকা', response)
+    if match:
+        offered_price = float(match.group(1))
+        if offered_price < marginal_price:
+            # Replace the offered price with the marginal price
+            response = re.sub(r'\d+\.?\d*\s*টাকা', f"{int(marginal_price)} টাকা", response)
+    
+    return response
 
 @router.post("/chat")
 async def chat(
@@ -69,7 +94,6 @@ async def chat(
 ):
     if not images and not text:
         return JSONResponse(status_code=400, content={"error": "At least one image or text input is required"})
-    
     
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
@@ -107,7 +131,6 @@ async def chat(
     seen_products = set()
     unique_products = []
     for product in retrieved_products:
-        # Create a unique identifier for each product based on its name and code
         identifier = (product.get('name', '').strip(), product.get('code', '').strip())
         if identifier not in seen_products:
             seen_products.add(identifier)
@@ -132,6 +155,22 @@ async def chat(
         inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
         response = chain.invoke(inputs)
         bot_response = response.content
+        
+        bargaining_keywords = [
+        "dam komano", "ektu komano", "dam ta onk", "eto dam kno", "komano jay kina", "komano jay na",
+        "dam kombe", "kom koren", "kom kore den", "dam onik beshi", "onek dami", "koto discount",
+        "discount pabo", "sera dam", "offer ache", "kom korun", "dam beshi", "kom dame", "discount din",
+        "price reduce", "bargain", "too expensive", "lower price", "can you reduce", "dam koman",
+        "dam ta kom korun", "ektu kom korun", "dam onek beshi", "kom daben", "discount diben", "beshi dam",
+        "দাম কমানো", "একটু কমানো", "দামটা অনেক", "এত দাম কেনো", "কমানো যায় কিনা", "কমানো যায় না",
+        "দাম কমবে", "কম করেন", "কম করে দেন", "দাম অনেক বেশি", "অনেক দামি", "কত ডিসকাউন্ট",
+        "ডিসকাউন্ট পাবো", "সেরা দাম", "অফার আছে", "কম করুন", "দাম বেশি", "কম দামে", "ডিসকাউন্ট দিন",
+        "দাম কমান", "দামটা কম করুন", "একটু কম করুন", "দাম অনেক বেশি", "কম দাবেন", "ডিসকাউন্ট দিবেন",
+        "বেশি দাম"
+    ]
+
+    if any(k in user_query.lower() for k in bargaining_keywords):
+      bot_response = validate_offer_price(bot_response, retrieved_products)
 
     # Increment message count
     try:
@@ -150,11 +189,9 @@ async def chat(
         "session_id": session_id
     })
 
-
 def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str = None):
     """Send message or image back to user via Facebook Graph API."""
     if image_url:
-        # Send image
         payload = {
             "messaging_type": "RESPONSE",
             "recipient": {"id": recipient_id},
@@ -169,7 +206,6 @@ def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str
             }
         }
     else:
-        # Send text message
         payload = {
             "messaging_type": "RESPONSE",
             "recipient": {"id": recipient_id},
@@ -185,20 +221,17 @@ def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str
         print(f"Error sending message: {response.text}")
     return response.status_code == 200
 
-
 @router.get("/webhook")
 async def verify_webhook(request: Request):
     mode = request.query_params.get("hub.mode")
     token = request.query_params.get("hub.verify_token")
     challenge = request.query_params.get("hub.challenge")
     
-    print(f"VERIFY_TOKEN: {settings.VERIFY_TOKEN}, Received token: {token}")  # Debug
-    
+    print(f"VERIFY_TOKEN: {settings.VERIFY_TOKEN}, Received token: {token}")
     if mode == "subscribe" and token == settings.VERIFY_TOKEN:
         return Response(content=str(challenge), status_code=200)
     else:
         raise HTTPException(status_code=403, detail="Forbidden")
-
 
 @router.post("/webhook")
 async def receive_webhook(request: Request):
@@ -210,11 +243,10 @@ async def receive_webhook(request: Request):
         messaging = entry.get("messaging", [])
         for message_data in messaging:
             sender_id = message_data["sender"]["id"]
-            print("Received message_data:", message_data)  # Debug log
+            print("Received message_data:", message_data)
             incoming_msg = message_data["message"].get("text", "")
             files = []
 
-            # Handle attachments
             if "attachments" in message_data["message"]:
                 attachment = message_data["message"]["attachments"][0]
                 if attachment["type"] == "image":
@@ -229,7 +261,6 @@ async def receive_webhook(request: Request):
                             send_to_facebook(sender_id, "Sorry, I couldn't process the image.")
                             continue
 
-            # Check for empty input
             if not incoming_msg and not files:
                 send_to_facebook(sender_id, "Please send a text message or an image to search for products.")
                 continue
@@ -260,4 +291,4 @@ async def receive_webhook(request: Request):
 
             send_to_facebook(sender_id, bot_reply)
 
-    return JSONResponse(status_code=200, content={"status": "ok"}) 
+    return JSONResponse(status_code=200, content={"status": "ok"})
