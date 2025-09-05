@@ -90,6 +90,7 @@
                             <th>Name</th>
                             <th>Description</th>
                             <th>Price</th>
+                            <th>Marginal Price</th>
                             <th>Code</th>
                             <th>Images</th>
                             <th>Actions</th>
@@ -226,6 +227,7 @@
                     <td>${product.name}</td>
                     <td>${product.description}</td>
                     <td>${product.price}</td>
+                    <td>${product.marginal_price}</td>
                     <td>${product.code}</td>
                     <td>${product.images.map(img => `<img src="${img}" width="50">`).join(' ')}</td>
                     <td>

@@ -23,16 +23,16 @@ class Settings:
     
     # LLM Configuration
     # OpenAI
-    # LLM_MODEL = "z-ai/glm-4.5-air:free"
-    # LLM_BASE_URL = "https://openrouter.ai/api/v1"
-    # LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
-    LLM_MAX_TOKENS = 700
-    LLM_TEMPERATURE = 0.7
+    LLM_MODEL = "accounts/fireworks/models/gpt-oss-20b"
+    LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
+    LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
+    LLM_MAX_TOKENS = 1654
+    LLM_TEMPERATURE = 0.6
     
     # Ollama (uncomment to use)
-    LLM_MODEL = "mistral:latest"
-    LLM_BASE_URL = "http://localhost:11434/v1"
-    LLM_API_KEY = "not-needed"
+    # LLM_MODEL = "mistral:latest"
+    # LLM_BASE_URL = "http://localhost:11434/v1"
+    # LLM_API_KEY = "not-needed"
     
     # File Paths
     VECTOR_STORES_PATH = "vector_stores"
