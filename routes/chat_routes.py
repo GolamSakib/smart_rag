@@ -117,6 +117,7 @@ async def chat(
             image_embedding = model_manager.get_image_embedding(image)
             D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
             retrieved_products.append(image_metadata[I[0][0]])
+            print("")
         session_data["last_products"] = retrieved_products
 
     # Text search
@@ -250,49 +251,60 @@ async def receive_webhook(request: Request):
             incoming_msg = message_data["message"].get("text", "")
             files = []
 
+            # Process all attachments
             if "attachments" in message_data["message"]:
-                attachment = message_data["message"]["attachments"][0]
-                if attachment["type"] == "image":
-                    image_url = attachment["payload"]["url"]
-                    async with httpx.AsyncClient() as client:
-                        image_response = await client.get(image_url)
-                        if image_response.status_code == 200:
-                            image_content = image_response.content
-                            files = [("images", (f"image_{sender_id}.jpg", image_content, "image/jpeg"))]
+                async with httpx.AsyncClient() as client:
+                    for idx, attachment in enumerate(message_data["message"]["attachments"]):
+                        if attachment["type"] == "image":
+                            image_url = attachment["payload"]["url"]
+                            try:
+                                image_response = await client.get(image_url, timeout=10.0)
+                                if image_response.status_code == 200:
+                                    image_content = image_response.content
+                                    files.append(
+                                        ("images", (f"image_{sender_id}_{idx}.jpg", image_content, "image/jpeg"))
+                                    )
+                                else:
+                                    print(f"Failed to download image {idx}: {image_response.status_code}")
+                                    send_to_facebook(sender_id, f"Sorry, I couldn't process image {idx + 1}.")
+                            except Exception as e:
+                                print(f"Error downloading image {idx}: {e}")
+                                send_to_facebook(sender_id, f"Sorry, I couldn't process image {idx + 1}.")
                         else:
-                            print(f"Failed to download image: {image_response.status_code}")
-                            send_to_facebook(sender_id, "Sorry, I couldn't process the image.")
-                            continue
+                            print(f"Skipping non-image attachment: {attachment['type']}")
+                            send_to_facebook(sender_id, "Please send images only for product search.")
 
             if not incoming_msg and not files:
-                send_to_facebook(sender_id, "Please send a text message or an image to search for products.")
+                send_to_facebook(sender_id, "Please send a text message or one or more images to search for products.")
                 continue
 
             session_id = sender_id
             async with httpx.AsyncClient() as client:
                 print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "files": bool(files)})
-                if files:
-                    response = await client.post(
-                        # "http://127.0.0.1:8000/api/chat",
-                        "https://chat.momsandkidsworld.com/api/chat",
-                        data={"text": incoming_msg, "session_id": session_id},
-                        files=files,
-                        timeout=30.0
-                    )
-                else:
-                    response = await client.post(
-                        # "http://127.0.0.1:8000/api/chat",
-                        "https://chat.momsandkidsworld.com/api/chat",
-                        data={"text": incoming_msg, "session_id": session_id},
-                        timeout=30.0
-                    )
+                try:
+                    if files:
+                        response = await client.post(
+                            "https://chat.momsandkidsworld.com/api/chat",
+                            data={"text": incoming_msg, "session_id": session_id},
+                            files=files,
+                            timeout=30.0
+                        )
+                    else:
+                        response = await client.post(
+                            "https://chat.momsandkidsworld.com/api/chat",
+                            data={"text": incoming_msg, "session_id": session_id},
+                            timeout=30.0
+                        )
 
-                if response.status_code != 200:
-                    print(f"Error from /chat: {response.status_code}, {response.text}")
-                    bot_reply = "Sorry, something went wrong."
-                else:
-                    result = response.json()
-                    bot_reply = result["reply"]
+                    if response.status_code != 200:
+                        print(f"Error from /chat: {response.status_code}, {response.text}")
+                        bot_reply = "Sorry, something went wrong."
+                    else:
+                        result = response.json()
+                        bot_reply = result["reply"]
+                except Exception as e:
+                    print(f"Error calling /api/chat: {e}")
+                    bot_reply = "Sorry, something went wrong. Please try again."
 
             send_to_facebook(sender_id, bot_reply)
 
