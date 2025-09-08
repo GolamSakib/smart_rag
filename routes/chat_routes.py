@@ -251,7 +251,7 @@ async def receive_webhook(request: Request):
             incoming_msg = message_data["message"].get("text", "")
             files = []
 
-            # ✅ Handle multiple image attachments
+            # Handle multiple image attachments
             attachments = message_data["message"].get("attachments", [])
             if attachments:
                 for idx, attachment in enumerate(attachments):
