@@ -148,7 +148,7 @@ async def chat(
     print(context)
 
     # Define query
-    user_query = text.strip() if text else "আপলোড করা ছবিতে থাকা পণ্যের নাম এবং মূল্য প্রদান করুন।"
+    user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
     if any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
         bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
@@ -157,6 +157,7 @@ async def chat(
         chain = RunnableSequence(prompt | llm)
         chat_history = memory.load_memory_variables({})["chat_history"]
         inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
+        print(inputs)
         response = chain.invoke(inputs)
         bot_response = response.content
         
