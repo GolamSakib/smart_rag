@@ -145,7 +145,7 @@ async def chat(
     print(context)
 
     # Define query
-    user_query = text.strip() if text else "Provide the name, description, and price of the products in the uploaded images."
+    user_query = text.strip() if text else "আপলোড করা ছবিতে থাকা পণ্যের নাম এবং মূল্য প্রদান করুন।"
 
     if any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
         bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
