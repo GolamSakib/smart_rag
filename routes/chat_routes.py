@@ -251,38 +251,41 @@ async def receive_webhook(request: Request):
             incoming_msg = message_data["message"].get("text", "")
             files = []
 
-            if "attachments" in message_data["message"]:
-                attachment = message_data["message"]["attachments"][0]
-                if attachment["type"] == "image":
-                    image_url = attachment["payload"]["url"]
-                    async with httpx.AsyncClient() as client:
-                        image_response = await client.get(image_url)
-                        if image_response.status_code == 200:
-                            image_content = image_response.content
-                            files = [("images", (f"image_{sender_id}.jpg", image_content, "image/jpeg"))]
-                        else:
-                            print(f"Failed to download image: {image_response.status_code}")
-                            send_to_facebook(sender_id, "Sorry, I couldn't process the image.")
-                            continue
-
+            # ✅ Handle multiple image attachments
+            attachments = message_data["message"].get("attachments", [])
+            if attachments:
+                for idx, attachment in enumerate(attachments):
+                    if attachment["type"] == "image":
+                        image_url = attachment["payload"]["url"]
+                        async with httpx.AsyncClient() as client:
+                            image_response = await client.get(image_url)
+                            if image_response.status_code == 200:
+                                image_content = image_response.content
+                                files.append(
+                                    (
+                                        "images",  # must match parameter name in /api/chat
+                                        (f"image_{sender_id}_{idx}.jpg", image_content, "image/jpeg")
+                                    )
+                                )
+                            else:
+                                print(f"Failed to download image: {image_response.status_code}")
+            
             if not incoming_msg and not files:
                 send_to_facebook(sender_id, "Please send a text message or an image to search for products.")
                 continue
 
             session_id = sender_id
             async with httpx.AsyncClient() as client:
-                print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "files": bool(files)})
+                print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "files_count": len(files)})
                 if files:
                     response = await client.post(
-                        # "http://127.0.0.1:8000/api/chat",
                         "https://chat.momsandkidsworld.com/api/chat",
                         data={"text": incoming_msg, "session_id": session_id},
-                        files=files,
+                        files=files,  # ✅ Now can send multiple images
                         timeout=30.0
                     )
                 else:
                     response = await client.post(
-                        # "http://127.0.0.1:8000/api/chat",
                         "https://chat.momsandkidsworld.com/api/chat",
                         data={"text": incoming_msg, "session_id": session_id},
                         timeout=30.0
