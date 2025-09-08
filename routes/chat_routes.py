@@ -33,7 +33,7 @@ prompt = PromptTemplate(
         "কনটেক্সট এবং চ্যাট হিস্ট্রি ব্যবহার করে ব্যবহারকারীর প্রশ্নের সঠিক এবং আকর্ষণীয় উত্তর দিন।\n"
         "শুধুমাত্র ব্যবহারকারী স্পষ্টভাবে পণ্যের বর্ণনা চাইলে (যেমন, 'description', 'বর্ণনা', 'details', 'বিস্তারিত' শব্দ ব্যবহার করলে) পণ্যের বর্ণনা অন্তর্ভুক্ত করুন। তখন অবশ্যই নিচের তথ্যটি যোগ করতে হবে:\n"
         "'আমাদের ব্যাগগুলো সরাসরি চায়না ও থাইল্যান্ড থেকে ইম্পোর্ট করা — কোয়ালিটিতে কোনো আপস নয়! প্রতিটি ব্যাগ তৈরি করা হয়েছে High Quality PU Leather দিয়ে, যা হাতের স্পর্শেই বুঝতে পারবেন এর প্রিমিয়াম ফিনিশিং! আমাদের ব্যাগগুলো এতটাই টেকসই যে, ৪-৫ বছরেও উঠে যাবে না বা নষ্ট হবে না ইনশাআল্লাহ। স্টাইল আর স্থায়িত্ব—দুটোই একসাথে! আপনি ব্যাগগুলো অনেক বছর ধরে নিশ্চিন্তে ব্যবহার করতে পারবেন।'\n"
-        "যদি ব্যবহারকারী এক বা একাধিক ছবি আপলোড করেন বা কোনো পণ্য সম্পর্কে জিজ্ঞাসা করেন, তবে পণ্যের নাম এবং মূল্য (টাকায়) অন্তর্ভুক্ত করুন, এবং বর্ণনা শুধুমাত্র তখনই দিন যদি ব্যবহারকারী স্পষ্টভাবে বর্ণনা চান।\n"
+        "যদি ব্যবহারকারী ছবি আপলোড করেন বা কোনো পণ্য সম্পর্কে জিজ্ঞাসা করেন, তবে পণ্যের নাম এবং মূল্য (টাকায়) অন্তর্ভুক্ত করুন, এবং বর্ণনা শুধুমাত্র তখনই দিন যদি ব্যবহারকারী স্পষ্টভাবে বর্ণনা চান।\n"
         "যদি ব্যবহারকারী পণ্যের ছবি দেখতে চান (যেমন, 'image dekhte chai', 'chobi dekhan', বা অনুরূপ), তবে বাংলায় উত্তর দিন: "
         "'পণ্যের ছবি দেখতে আমাদের WhatsApp নাম্বারে যোগাযোগ করুন: 01942550295 সেখানে আপনাকে পণ্যের বিস্তারিত ছবি পাঠানো হবে।'\n"
         "যদি ব্যবহারকারী 'pp', 'price', বা অনুরূপ কিছু (কেস-ইনসেনসিটিভ) জিজ্ঞাসা করেন, তবে কনটেক্সট থেকে সবচেয়ে প্রাসঙ্গিক পণ্যের মূল্য শুধুমাত্র টাকায় উল্লেখ করুন।\n"
@@ -117,7 +117,7 @@ async def chat(
             image_embedding = model_manager.get_image_embedding(image)
             D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
             retrieved_products.append(image_metadata[I[0][0]])
-            print("retrieved_products", retrieved_products)
+            print("")
         session_data["last_products"] = retrieved_products
 
     # Text search
@@ -148,7 +148,7 @@ async def chat(
     print(context)
 
     # Define query
-    user_query = text.strip() if text else "আপলোড করা ছবিগুলিতে থাকা পণ্যের নাম এবং মূল্য প্রদান করুন।"
+    user_query = text.strip() if text else "আপলোড করা ছবিতে থাকা পণ্যের নাম এবং মূল্য প্রদান করুন।"
 
     if any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
         bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
@@ -251,60 +251,49 @@ async def receive_webhook(request: Request):
             incoming_msg = message_data["message"].get("text", "")
             files = []
 
-            # Process all attachments
             if "attachments" in message_data["message"]:
-                async with httpx.AsyncClient() as client:
-                    for idx, attachment in enumerate(message_data["message"]["attachments"]):
-                        if attachment["type"] == "image":
-                            image_url = attachment["payload"]["url"]
-                            try:
-                                image_response = await client.get(image_url, timeout=10.0)
-                                if image_response.status_code == 200:
-                                    image_content = image_response.content
-                                    files.append(
-                                        ("images", (f"image_{sender_id}_{idx}.jpg", image_content, "image/jpeg"))
-                                    )
-                                else:
-                                    print(f"Failed to download image {idx}: {image_response.status_code}")
-                                    send_to_facebook(sender_id, f"Sorry, I couldn't process image {idx + 1}.")
-                            except Exception as e:
-                                print(f"Error downloading image {idx}: {e}")
-                                send_to_facebook(sender_id, f"Sorry, I couldn't process image {idx + 1}.")
+                attachment = message_data["message"]["attachments"][0]
+                if attachment["type"] == "image":
+                    image_url = attachment["payload"]["url"]
+                    async with httpx.AsyncClient() as client:
+                        image_response = await client.get(image_url)
+                        if image_response.status_code == 200:
+                            image_content = image_response.content
+                            files = [("images", (f"image_{sender_id}.jpg", image_content, "image/jpeg"))]
                         else:
-                            print(f"Skipping non-image attachment: {attachment['type']}")
-                            send_to_facebook(sender_id, "Please send images only for product search.")
+                            print(f"Failed to download image: {image_response.status_code}")
+                            send_to_facebook(sender_id, "Sorry, I couldn't process the image.")
+                            continue
 
             if not incoming_msg and not files:
-                send_to_facebook(sender_id, "Please send a text message or one or more images to search for products.")
+                send_to_facebook(sender_id, "Please send a text message or an image to search for products.")
                 continue
 
             session_id = sender_id
             async with httpx.AsyncClient() as client:
                 print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "files": bool(files)})
-                try:
-                    if files:
-                        response = await client.post(
-                            "https://chat.momsandkidsworld.com/api/chat",
-                            data={"text": incoming_msg, "session_id": session_id},
-                            files=files,
-                            timeout=30.0
-                        )
-                    else:
-                        response = await client.post(
-                            "https://chat.momsandkidsworld.com/api/chat",
-                            data={"text": incoming_msg, "session_id": session_id},
-                            timeout=30.0
-                        )
+                if files:
+                    response = await client.post(
+                        # "http://127.0.0.1:8000/api/chat",
+                        "https://chat.momsandkidsworld.com/api/chat",
+                        data={"text": incoming_msg, "session_id": session_id},
+                        files=files,
+                        timeout=30.0
+                    )
+                else:
+                    response = await client.post(
+                        # "http://127.0.0.1:8000/api/chat",
+                        "https://chat.momsandkidsworld.com/api/chat",
+                        data={"text": incoming_msg, "session_id": session_id},
+                        timeout=30.0
+                    )
 
-                    if response.status_code != 200:
-                        print(f"Error from /chat: {response.status_code}, {response.text}")
-                        bot_reply = "Sorry, something went wrong."
-                    else:
-                        result = response.json()
-                        bot_reply = result["reply"]
-                except Exception as e:
-                    print(f"Error calling /api/chat: {e}")
-                    bot_reply = "Sorry, something went wrong. Please try again."
+                if response.status_code != 200:
+                    print(f"Error from /chat: {response.status_code}, {response.text}")
+                    bot_reply = "Sorry, something went wrong."
+                else:
+                    result = response.json()
+                    bot_reply = result["reply"]
 
             send_to_facebook(sender_id, bot_reply)
 
