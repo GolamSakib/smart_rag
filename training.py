@@ -53,7 +53,7 @@ if image_embeddings:
 # Create documents for LangChain
 documents = []
 for product in products:
-    product_text = f"Name: {product['name']}\nDescription: {product['description']}\nPrice: {product['price']}\nMarginal Price: {product['marginal_price']}\nCode: {product['code']}"
+    product_text = f"Name: {product['name']}\nDescription: {product['description']}\nPrice: {product['price']}\nMarginal Price: {product['marginal_price']}\nCode: {product['code']}\nLink: {product['link']}"
     documents.append(Document(page_content=product_text, metadata=product))
 
 # Create embeddings

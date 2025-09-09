@@ -49,6 +49,10 @@
                         <label for="productDescription">Description</label>
                         <textarea class="form-control" id="productDescription" rows="3"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="productLink">Link</label>
+                        <input type="text" class="form-control" id="productLink">
+                    </div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label for="productPrice">Price</label>
@@ -80,6 +84,7 @@
                 <form id="filterForm" class="form-inline mb-3">
                     <input type="text" class="form-control mr-2" id="filterName" placeholder="Name">
                     <input type="text" class="form-control mr-2" id="filterCode" placeholder="Code">
+                    <input type="text" class="form-control mr-2" id="filterLink" placeholder="Link">
                     <input type="number" class="form-control mr-2" id="filterMinPrice" placeholder="Min Price">
                     <input type="number" class="form-control mr-2" id="filterMaxPrice" placeholder="Max Price">
                     <button type="submit" class="btn btn-primary">Filter</button>
@@ -92,6 +97,7 @@
                             <th>Price</th>
                             <th>Marginal Price</th>
                             <th>Code</th>
+                            <th>Link</th>
                             <th>Images</th>
                             <th>Actions</th>
                         </tr>
@@ -113,6 +119,7 @@
 
     <script>
         const API_URL = 'https://chat.momsandkidsworld.com';
+        <!-- const API_URL = 'http://localhost:8000'; -->
 
         // --- Image Management ---
         async function uploadImage() {
@@ -181,6 +188,7 @@
                 price: parseFloat(document.getElementById('productPrice').value),
                 code: document.getElementById('productCode').value,
                 marginal_price: parseFloat(document.getElementById('marginalPrice').value),
+                link: document.getElementById('productLink').value,
                 image_ids: selectedImages
             };
 
@@ -207,11 +215,13 @@
             const params = new URLSearchParams();
             const name = document.getElementById('filterName').value;
             const code = document.getElementById('filterCode').value;
+            const link = document.getElementById('filterLink').value;
             const minPrice = document.getElementById('filterMinPrice').value;
             const maxPrice = document.getElementById('filterMaxPrice').value;
 
             if (name) params.append('name', name);
             if (code) params.append('code', code);
+            if (link) params.append('link', link);
             if (minPrice) params.append('min_price', minPrice);
             if (maxPrice) params.append('max_price', maxPrice);
 
@@ -228,6 +238,7 @@
                     <td>${product.price}</td>
                     <td>${product.marginal_price}</td>
                     <td>${product.code}</td>
+                    <td><a href="${product.link}" target="_blank">${product.link}</a></td>
                     <td>${product.images.map(img => `<img src="${img}" width="50">`).join(' ')}</td>
                     <td>
                         <button class="btn btn-sm btn-primary" onclick='editProduct(${JSON.stringify(product)})'>Edit</button>
@@ -245,6 +256,7 @@
             document.getElementById('productPrice').value = product.price;
             document.getElementById('productCode').value = product.code;
             document.getElementById('marginalPrice').value = product.marginal_price;
+            document.getElementById('productLink').value = product.link;
 
             // Select images
             document.querySelectorAll('#productImageGallery .image-item').forEach(item => {

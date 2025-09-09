@@ -18,6 +18,7 @@ class Product(BaseModel):
     code: str
     marginal_price: float
     image_ids: List[int]
+    link: Optional[str] = None
 
 
 @router.post("/api/products")
@@ -25,9 +26,9 @@ def create_product(product: Product):
     try:
         with db_service.get_cursor() as (cursor, conn):
             add_product = ("INSERT INTO products "
-                          "(name, description, price, code, marginal_price) "
-                          "VALUES (%s, %s, %s, %s, %s)")
-            data_product = (product.name, product.description, product.price, product.code, product.marginal_price)
+                          "(name, description, price, code, marginal_price, link) "
+                          "VALUES (%s, %s, %s, %s, %s, %s)")
+            data_product = (product.name, product.description, product.price, product.code, product.marginal_price, product.link)
             cursor.execute(add_product, data_product)
             conn.commit()
             product_id = cursor.lastrowid
@@ -48,7 +49,8 @@ def get_products(
     name: Optional[str] = None, 
     code: Optional[str] = None, 
     min_price: Optional[str] = None, 
-    max_price: Optional[str] = None
+    max_price: Optional[str] = None,
+    link: Optional[str] = None
 ):
     try:
         with db_service.get_cursor(dictionary=True) as (cursor, conn):
@@ -65,6 +67,9 @@ def get_products(
             if code:
                 query += " AND p.code = %s"
                 params.append(code)
+            if link:
+                query += " AND p.link = %s"
+                params.append(link)
             
             if min_price:
                 try:
@@ -104,8 +109,8 @@ def get_products(
 def update_product(product_id: int, product: Product):
     try:
         with db_service.get_cursor() as (cursor, conn):
-            update_prod = ("UPDATE products SET name=%s, description=%s, price=%s, code=%s, marginal_price=%s WHERE id=%s")
-            data_prod = (product.name, product.description, product.price, product.code, product.marginal_price, product_id)
+            update_prod = ("UPDATE products SET name=%s, description=%s, price=%s, code=%s, marginal_price=%s, link=%s WHERE id=%s")
+            data_prod = (product.name, product.description, product.price, product.code, product.marginal_price, product.link, product_id)
             cursor.execute(update_prod, data_prod)
 
             cursor.execute("DELETE FROM product_images WHERE product_id = %s", (product_id,))

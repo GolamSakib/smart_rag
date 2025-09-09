@@ -21,6 +21,7 @@ TABLES['products'] = (
     "  `price` decimal(10, 2) NOT NULL,"
     "  `code` varchar(50) NOT NULL,"
     "  `marginal_price` decimal(10, 2) NOT NULL,"
+    "  `link` text,"
     "  PRIMARY KEY (`id`)"
     ") ENGINE=InnoDB")
 
