@@ -11,6 +11,9 @@ import numpy as np
 import httpx
 import requests
 import re
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 from services.model_manager import model_manager
 from config.settings import settings
@@ -67,7 +70,6 @@ prompt = PromptTemplate(
 )
 
 
-
 def validate_offer_price(response: str, products: List[dict]) -> str:
     """
     Validate the offered price in the bot's response to ensure it is not below the marginal price.
@@ -89,6 +91,19 @@ def validate_offer_price(response: str, products: List[dict]) -> str:
             response = re.sub(r'\d+\.?\d*\s*টাকা', f"{int(marginal_price)} টাকা", response)
     
     return response
+
+def add_to_google_sheet(phone_number: str):
+    try:
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_file("google_sheet.json", scopes=scope)
+        client = gspread.authorize(creds)
+        sheet = client.open_by_key("1eEuya073QSg0iXsued7e1xJbcrRdKuD7UH7JsyQLvS0").sheet1
+        
+        today_date = datetime.now().strftime("%Y-%m-%d")
+        sheet.insert_row([phone_number, today_date], index=2) # index=2 to insert at the top after header
+        print(f"Successfully added {phone_number} to Google Sheet.")
+    except Exception as e:
+        print(f"Error adding to Google Sheet: {e}")
 
 @router.post("/api/chat")
 async def chat(
@@ -151,6 +166,15 @@ async def chat(
     # Define query
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
+    # Check for phone number and save to Google Sheet
+    phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
+    match = re.search(phone_pattern, user_query)
+    print("Phone number match:", match)
+    if match:
+        phone_number = match.group(0)
+        # It can be a background task if it takes time
+        add_to_google_sheet(phone_number)
+
     if any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
         bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
     else:
@@ -161,6 +185,7 @@ async def chat(
         print(inputs)
         response = chain.invoke(inputs)
         bot_response = response.content
+
         
     #     bargaining_keywords = [
     #     "dam komano", "ektu komano", "dam ta onk", "eto dam kno", "komano jay kina", "komano jay na",
