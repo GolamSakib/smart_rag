@@ -1,14 +1,17 @@
-fastapi
-uvicorn[standard]
-faiss-cpu
-transformers
-torch
-Pillow
-langchain
-langchain-community
-langchain-openai
-mysql-connector-python
-python-dotenv
-httpx
-requests
-pydantic
+  fastapi
+  uvicorn[standard]
+  faiss-cpu
+  transformers
+  torch
+  Pillow
+  langchain
+  langchain-community
+  langchain-openai
+  mysql-connector-python
+  python-dotenv
+  httpx
+  requests
+  pydantic
+  gspread
+  google-auth-oauthlib
+  google-api-python-client

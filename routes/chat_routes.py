@@ -11,6 +11,9 @@ import numpy as np
 import httpx
 import requests
 import re
+import gspread
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from datetime import datetime
 
 from services.model_manager import model_manager
 from config.settings import settings
@@ -161,6 +164,24 @@ async def chat(
         print(inputs)
         response = chain.invoke(inputs)
         bot_response = response.content
+
+    phone_number_pattern = re.compile(r'(?:\d{8,11}|[০-৯]{8,11})')
+    phone_match = phone_number_pattern.search(bot_response)
+    if phone_match:
+        phone_number = phone_match.group(0)
+        try:
+            # Authenticate with Google Sheets
+            scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+            creds = ServiceAccountCredentials.from_json_keyfile_name('google_sheet.json', scope)
+            client = gspread.authorize(creds)
+
+            # Open the sheet and append the data
+            sheet = client.open_by_key("1eEuya073QSg0iXsued7e1xJbcrRdKuD7UH7JsyQLvS0").sheet1
+            today_date = datetime.now().strftime('%Y-%m-%d')
+            sheet.append_row([phone_number, today_date])
+            print(f"Successfully sent phone number {phone_number} and date {today_date} to Google Sheet.")
+        except Exception as e:
+            print(f"Error sending data to Google Sheet: {e}")
         
     #     bargaining_keywords = [
     #     "dam komano", "ektu komano", "dam ta onk", "eto dam kno", "komano jay kina", "komano jay na",
