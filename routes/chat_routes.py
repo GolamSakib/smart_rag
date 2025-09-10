@@ -12,7 +12,7 @@ import httpx
 import requests
 import re
 import gspread
-from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 
 from services.model_manager import model_manager
@@ -171,15 +171,16 @@ async def chat(
         phone_number = phone_match.group(0)
         try:
             # Authenticate with Google Sheets
-            scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-            creds = ServiceAccountCredentials.from_json_keyfile_name('google_sheet.json', scope)
-            client = gspread.authorize(creds)
+        # Authenticate with Google Sheets
+          scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+          creds = Credentials.from_service_account_file('google_sheet.json', scopes=scope)
+          client = gspread.authorize(creds)
 
-            # Open the sheet and append the data
-            sheet = client.open_by_key("1eEuya073QSg0iXsued7e1xJbcrRdKuD7UH7JsyQLvS0").sheet1
-            today_date = datetime.now().strftime('%Y-%m-%d')
-            sheet.append_row([phone_number, today_date])
-            print(f"Successfully sent phone number {phone_number} and date {today_date} to Google Sheet.")
+        # Open the sheet and append the data
+          sheet = client.open_by_key("1eEuya073QSg0iXsued7e1xJbcrRdKuD7UH7JsyQLvS0").sheet1
+          today_date = datetime.now().strftime('%Y-%m-%d')
+          sheet.append_row([phone_number, today_date])
+          print(f"Successfully sent phone number {phone_number} and date {today_date} to Google Sheet.")
         except Exception as e:
             print(f"Error sending data to Google Sheet: {e}")
         
