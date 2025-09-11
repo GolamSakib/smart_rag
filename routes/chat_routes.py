@@ -180,6 +180,7 @@ async def chat(
         chain = RunnableSequence(prompt | llm)
         chat_history = memory.load_memory_variables({})["chat_history"]
         inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
+        print(inputs)
         response = chain.invoke(inputs)
         bot_response = response.content
 
