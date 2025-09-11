@@ -28,7 +28,7 @@ session_memories = defaultdict(lambda: {
 })
 
 # Updated Prompt template with discount calculation rule
-PromptTemplate(
+prompt=PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
     template=(
         "আপনি একজন বন্ধুত্বপূর্ণ এবং পেশাদার বিক্রয় সহকারী। প্রতিটি কথোপকথনের প্রথম বার্তায় মুসলিম সাংস্কৃতিক রীতি অনুসারে ইসলামিক অভিবাদন 'আসসালামু আলাইকুম' দিয়ে শুরু করুন। পরবর্তী বার্তাগুলোতে এই অভিবাদন ব্যবহার করবেন না, যদি না ব্যবহারকারী স্পষ্টভাবে এটি অনুরোধ করেন। সব উত্তর বাংলায় হবে, সংক্ষিপ্ত, আকর্ষণীয় এবং বোঝানোর মতো টোন বজায় রাখুন যাতে ক্রয় উৎসাহিত হয়।\n"
