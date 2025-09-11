@@ -24,15 +24,16 @@ router = APIRouter()
 # In-memory store for per-session memory
 session_memories = defaultdict(lambda: {
     "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
-    "last_products": []  # Store last retrieved products
+    "last_products": [],  # Store last retrieved products
+    "message_count": 0    # Track number of messages in the session
 })
 
 # Updated Prompt template with discount calculation rule
-prompt=PromptTemplate(
+prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
     template=(
         "আপনি একজন বন্ধুত্বপূর্ণ এবং পেশাদার বিক্রয় সহকারী। প্রতিটি কথোপকথনের প্রথম বার্তায় মুসলিম সাংস্কৃতিক রীতি অনুসারে ইসলামিক অভিবাদন 'আসসালামু আলাইকুম' দিয়ে শুরু করুন। পরবর্তী বার্তাগুলোতে এই অভিবাদন ব্যবহার করবেন না, যদি না ব্যবহারকারী স্পষ্টভাবে এটি অনুরোধ করেন। সব উত্তর বাংলায় হবে, সংক্ষিপ্ত, আকর্ষণীয় এবং বোঝানোর মতো টোন বজায় রাখুন যাতে ক্রয় উৎসাহিত হয়।\n"
-        "কনটেক্সটে দেওয়া পণ্যের বিবরণ (নাম, মূল্য, লিঙ্ক) ঠিক যেমন আছে তেমন রাখুন, কোনো অনুবাদ করবেন না। পণ্যের তালিকা প্রদর্শন করার সময় কোনো অ্যাসটেরিস্ক (*) বা হাইফেন (-) ব্যবহার করবেন না, এবং তালিকাটি বাংলা সংখ্যায় (১, ২, ৩, ইত্যাদি) সাজানো হবে।\n"
+        "কনটেক্সটে দেওয়া পণ্যের বিবরণ (নাম, মূল্য, লিঙ্ক) ঠিক যেমন আছে তেমন রাখুন, কোনো অনুবাদ করবেন না। পণ্যের তালিকা প্রদর্শন করার সময় কোনো অ্যাসটেরিস্ক (*) বা হাইফেন (-) ব্যবহার করবেন না। যদি একটি মাত্র পণ্য থাকে, তবে কোনো সংখ্যা (যেমন, ১) ব্যবহার করবেন না, শুধু পণ্যের বিবরণ প্রদর্শন করুন। যদি একাধিক পণ্য থাকে, তবে তালিকাটি বাংলা সংখ্যায় (১, ২, ৩, ইত্যাদি) সাজানো হবে।\n"
         "যদি ব্যবহারকারী সরাসরি লিঙ্ক দেখতে চান বা 'link', 'website', 'দেখতে চাই' এর মতো শব্দ ব্যবহার করেন, তখন তাকে বলুন 'আপনি আমাদের ওয়েবসাইটে পণ্যটি দেখতে পারেন' এবং লিঙ্কটি দিন। অন্যথায় লিঙ্ক দেবেন না।\n"
         "কনটেক্সট এবং চ্যাট হিস্ট্রি ব্যবহার করে ব্যবহারকারীর প্রশ্নের সঠিক এবং আকর্ষণীয় উত্তর দিন।\n"
         "শুধুমাত্র ব্যবহারকারী স্পষ্টভাবে পণ্যের বর্ণনা চাইলে (যেমন, 'description', 'বর্ণনা', 'details', 'বিস্তারিত' শব্দ ব্যবহার করলে) পণ্যের বর্ণনা অন্তর্ভুক্ত করুন। তখন অবশ্যই নিচের তথ্যটি যোগ করতে হবে:\n"
@@ -118,6 +119,7 @@ async def chat(
     session_data = session_memories[session_id]
     memory = session_data["memory"]
     retrieved_products = session_data["last_products"]
+    session_data["message_count"] += 1  # Increment message count
 
     # Image search
     if images:
@@ -133,7 +135,6 @@ async def chat(
             image_embedding = model_manager.get_image_embedding(image)
             D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
             retrieved_products.append(image_metadata[I[0][0]])
-            print("")
         session_data["last_products"] = retrieved_products
 
     # Text search
@@ -161,7 +162,6 @@ async def chat(
     context = "\nAvailable products:\n"
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']}, Link: {product['link']}\n"
-    print(context)
 
     # Define query
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
@@ -169,10 +169,8 @@ async def chat(
     # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
     match = re.search(phone_pattern, user_query)
-    print("Phone number match:", match)
     if match:
         phone_number = match.group(0)
-        # It can be a background task if it takes time
         add_to_google_sheet(phone_number)
 
     if any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
@@ -182,28 +180,10 @@ async def chat(
         chain = RunnableSequence(prompt | llm)
         chat_history = memory.load_memory_variables({})["chat_history"]
         inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
-        print(inputs)
         response = chain.invoke(inputs)
         bot_response = response.content
 
-        
-    #     bargaining_keywords = [
-    #     "dam komano", "ektu komano", "dam ta onk", "eto dam kno", "komano jay kina", "komano jay na",
-    #     "dam kombe", "kom koren", "kom kore den", "dam onik beshi", "onek dami", "koto discount",
-    #     "discount pabo", "sera dam", "offer ache", "kom korun", "dam beshi", "kom dame", "discount din",
-    #     "price reduce", "bargain", "too expensive", "lower price", "can you reduce", "dam koman",
-    #     "dam ta kom korun", "ektu kom korun", "dam onek beshi", "kom daben", "discount diben", "beshi dam",
-    #     "দাম কমানো", "একটু কমানো", "দামটা অনেক", "এত দাম কেনো", "কমানো যায় কিনা", "কমানো যায় না",
-    #     "দাম কমবে", "কম করেন", "কম করে দেন", "দাম অনেক বেশি", "অনেক দামি", "কত ডিসকাউন্ট",
-    #     "ডিসকাউন্ট পাবো", "সেরা দাম", "অফার আছে", "কম করুন", "দাম বেশি", "কম দামে", "ডিসকাউন্ট দিন",
-    #     "দাম কমান", "দামটা কম করুন", "একটু কম করুন", "দাম অনেক বেশি", "কম দাবেন", "ডিসকাউন্ট দিবেন",
-    #     "বেশি দাম"
-    # ]
-
-    # if any(k in user_query.lower() for k in bargaining_keywords):
-    #   bot_response = validate_offer_price(bot_response, retrieved_products)
-
-    # Increment message count
+    # Increment message count in database
     try:
         with db_service.get_cursor() as (cursor, connection):
             cursor.execute("UPDATE business_settings SET value = value + 1 WHERE `key` = 'number_of_message'")
@@ -213,6 +193,15 @@ async def chat(
 
     # Save to memory
     memory.save_context({"user_query": user_query}, {"output": bot_response})
+
+    # Check if message count has reached 15 and clear memory if so
+    if session_data["message_count"] >= 15:
+        session_memories[session_id] = {
+            "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
+            "last_products": [],
+            "message_count": 0
+        }
+        print(f"Session memory cleared for session_id: {session_id} after 15 messages")
 
     return JSONResponse(content={
         "reply": bot_response,
