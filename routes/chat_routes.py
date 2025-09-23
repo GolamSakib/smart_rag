@@ -210,9 +210,24 @@ async def chat(
         has_size_variants = False
         size_products = []
         for product in retrieved_products:
-            if any(size_word in product.get('description', '').lower() for size_word in ['size', 'সাইজ', 'জুতা', 'shoe']):
-                has_size_variants = True
-                size_products.append(product)
+            description = product.get('description', '').lower()
+            # Check for shoe-specific patterns: "সাইজ=" followed by numbers (shoe sizes)
+            # vs bag patterns: "সাইজ=" followed by measurements (cm/inches)
+            if 'সাইজ=' in description:
+                # Check if it's shoe sizes (numbers like 36,37,38,39,40) vs measurements (cm, inches)
+                import re
+                # Look for shoe size pattern: সাইজ= followed by numbers separated by commas
+                shoe_size_pattern = r'সাইজ\s*=\s*সাইজ\s*=\s*\d+(?:,\d+)*'
+                # Look for measurement pattern: contains cm, inch, সেমি, ইঞ্চি
+                measurement_pattern = r'(সেমি|ইঞ্চি|cm|inch|length|width|height)'
+                
+                if re.search(shoe_size_pattern, description) and not re.search(measurement_pattern, description):
+                    has_size_variants = True
+                    size_products.append(product)
+                # Also check for explicit shoe keywords as backup
+                elif any(shoe_word in description for shoe_word in ['জুতা', 'shoe', 'juta']):
+                    has_size_variants = True
+                    size_products.append(product)
         
         if has_size_variants:
             bot_response = "আপনি কোন সাইজের জুতা অর্ডার করতে চাচ্ছেন? দয়া করে আপনার সাইজ জানিয়ে দিন।"
