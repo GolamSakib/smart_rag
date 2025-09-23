@@ -21,6 +21,7 @@ from services.database_service import db_service
 
 router = APIRouter()
 
+
 # In-memory store for per-session memory
 session_memories = defaultdict(lambda: {
     "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
@@ -215,7 +216,6 @@ async def chat(
             # vs bag patterns: "সাইজ=" followed by measurements (cm/inches)
             if 'সাইজ=' in description:
                 # Check if it's shoe sizes (numbers like 36,37,38,39,40) vs measurements (cm, inches)
-                import re
                 # Look for shoe size pattern: সাইজ= followed by numbers separated by commas
                 shoe_size_pattern = r'সাইজ\s*=\s*সাইজ\s*=\s*\d+(?:,\d+)*'
                 # Look for measurement pattern: contains cm, inch, সেমি, ইঞ্চি
