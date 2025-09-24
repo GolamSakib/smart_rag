@@ -163,7 +163,19 @@ async def chat(
             retrieved_products.append(image_metadata[I[0][0]])
         session_data["last_products"] = retrieved_products
 
-    # Text search
+    # Define query early to allow conditional logic
+    user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
+
+    # Handle price query for first-time users with no product context
+    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম"]):
+        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
+        return JSONResponse(content={
+            "reply": bot_response,
+            "related_products": [],
+            "session_id": session_id
+        })
+
+    # Text search - now this block runs ONLY if the above condition was NOT met, and if 'text' is provided
     if text:
         text_vector_store = model_manager.get_text_vector_store()
         if text_vector_store is None:
@@ -188,9 +200,6 @@ async def chat(
     context = "\nAvailable products:\n"
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
-
-    # Define query
-    user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
     # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
@@ -230,8 +239,6 @@ async def chat(
             bot_response = "📦 অর্ডার কনফার্ম করতে দয়া করে নিচের তথ্য দিন:\n👤 নাম\n🏠 ঠিকানা\n📱 মোবাইল নাম্বার\n💰 কোনো অগ্রিম পেমেন্ট নেই! পণ্য হাতে পেয়ে চেক করে ক্যাশ অন ডেলিভারিতে পেমেন্ট করুন।\nঅর্ডার ট্র্যাক করতে আমাদের WhatsApp-এ যোগাযোগ করুন: https://wa.me/8801942550295"
     elif any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
         bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
-    elif not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম"]):
-        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
     else:
         llm = model_manager.get_llm()
         chain = RunnableSequence(prompt | llm)
