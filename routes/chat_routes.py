@@ -166,6 +166,8 @@ async def chat(
     # Define query early to allow conditional logic
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
+    print("retrieved_products:", retrieved_products)
+
     # Handle price query for first-time users with no product context
     if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম", "মূল্য","hi","Hello","Hey","হাই","হ্যালো","হেলো"]):
         bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
