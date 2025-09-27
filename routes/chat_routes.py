@@ -147,6 +147,21 @@ async def chat(
     retrieved_products = session_data["last_products"]
     session_data["message_count"] += 1  # Increment message count
 
+    # Define query early to allow conditional logic
+    user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
+
+    print("retrieved_products:", retrieved_products)
+
+    # Handle greeting/price query for first-time users with no product context
+    # CHECK THIS BEFORE doing any text search that might populate retrieved_products
+    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম", "মূল্য","hi","hello","hey","হাই","হ্যালো","হেলো"]):
+        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
+        return JSONResponse(content={
+            "reply": bot_response,
+            "related_products": [],
+            "session_id": session_id
+        })
+
     # Image search
     if images:
         retrieved_products = []
@@ -163,21 +178,9 @@ async def chat(
             retrieved_products.append(image_metadata[I[0][0]])
         session_data["last_products"] = retrieved_products
 
-    # Define query early to allow conditional logic
-    user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
-
     print("retrieved_products:", retrieved_products)
 
-    # Handle price query for first-time users with no product context
-    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম", "মূল্য","hi","Hello","Hey","হাই","হ্যালো","হেলো"]):
-        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
-        return JSONResponse(content={
-            "reply": bot_response,
-            "related_products": [],
-            "session_id": session_id
-        })
-
-    # Text search - now this block runs ONLY if the above condition was NOT met, and if 'text' is provided
+    # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
     if text:
         text_vector_store = model_manager.get_text_vector_store()
         if text_vector_store is None:
@@ -209,8 +212,6 @@ async def chat(
     if match:
         phone_number = match.group(0)
         add_to_google_sheet(phone_number)
-
-
 
     llm = model_manager.get_llm()
     chain = RunnableSequence(prompt | llm)
