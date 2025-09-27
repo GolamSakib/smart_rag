@@ -150,19 +150,7 @@ async def chat(
     # Define query early to allow conditional logic
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
-    print("retrieved_products:", retrieved_products)
-
-    # Handle greeting/price query for first-time users with no product context
-    # CHECK THIS BEFORE doing any text search that might populate retrieved_products
-    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম", "মূল্য","hi","hello","hey","হাই","হ্যালো","হেলো"]):
-        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
-        return JSONResponse(content={
-            "reply": bot_response,
-            "related_products": [],
-            "session_id": session_id
-        })
-
-    # Image search
+    # Image search - Process images FIRST, before checking for greetings
     if images:
         retrieved_products = []
         image_index = model_manager.get_image_index()
@@ -179,6 +167,16 @@ async def chat(
         session_data["last_products"] = retrieved_products
 
     print("retrieved_products:", retrieved_products)
+
+    # Handle greeting/price query for first-time users with no product context
+    # CHECK THIS AFTER image processing but BEFORE text search
+    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম", "মূল্য","hi","hello","hey","হাই","হ্যালো","হেলো"]):
+        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
+        return JSONResponse(content={
+            "reply": bot_response,
+            "related_products": [],
+            "session_id": session_id
+        })
 
     # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
     if text:
