@@ -210,45 +210,7 @@ async def chat(
         phone_number = match.group(0)
         add_to_google_sheet(phone_number)
 
-    # Check if user wants to order and if product has size variants
-    # if any(k in user_query.lower() for k in ["order", "অর্ডার", "kina", "কিনা", "korte chai", "করতে চাই"]):
-    #     # Check if any product has size information in description
-    #     has_size_variants = False
-    #     size_products = []
-    #     for product in retrieved_products:
-    #         description = product.get('description', '').lower()
-    #         # Check for shoe-specific patterns: "সাইজ=" followed by numbers (shoe sizes)
-    #         # vs bag patterns: "সাইজ=" followed by measurements (cm/inches)
-    #         if 'সাইজ=' in description:
-    #             # Check if it's shoe sizes (numbers like 36,37,38,39,40) vs measurements (cm, inches)
-    #             # Look for shoe size pattern: সাইজ= followed by numbers separated by commas
-    #             shoe_size_pattern = r'সাইজ\s*=\s*সাইজ\s*=\s*\d+(?:,\d+)*'
-    #             # Look for measurement pattern: contains cm, inch, সেমি, ইঞ্চি
-    #             measurement_pattern = r'(সেমি|ইঞ্চি|cm|inch|length|width|height)'
-                
-    #             if re.search(shoe_size_pattern, description) and not re.search(measurement_pattern, description):
-    #                 has_size_variants = True
-    #                 size_products.append(product)
-    #             # Also check for explicit shoe keywords as backup
-    #             elif any(shoe_word in description for shoe_word in ['জুতা', 'shoe', 'juta']):
-    #                 has_size_variants = True
-    #                 size_products.append(product)
-        
-    #     if has_size_variants:
-    #         bot_response = "আপনি কোন সাইজের জুতা অর্ডার করতে চাচ্ছেন? দয়া করে আপনার সাইজ জানিয়ে দিন।"
-    #     else:
-    #         # Regular order confirmation
-    #         bot_response = "📦 অর্ডার কনফার্ম করতে দয়া করে নিচের তথ্য দিন:\n👤 নাম\n🏠 ঠিকানা\n📱 মোবাইল নাম্বার\n💰 কোনো অগ্রিম পেমেন্ট নেই! পণ্য হাতে পেয়ে চেক করে ক্যাশ অন ডেলিভারিতে পেমেন্ট করুন।\nঅর্ডার ট্র্যাক করতে আমাদের WhatsApp-এ যোগাযোগ করুন: https://wa.me/8801942550295"
-    # elif any(k in user_query.lower() for k in ["hubohu", "exactly like", "same as picture", "ছবির মত", "হুবহু"]):
-    #     bot_response = "হ্যাঁ, পণ্য একদম হুবহু ছবির মতো হবে! আমরা নিশ্চিত করি যে আপনি ছবিতে যা দেখছেন, ঠিক তেমনটাই পাবেন।"
-    # else:
-    #     llm = model_manager.get_llm()
-    #     chain = RunnableSequence(prompt | llm)
-    #     chat_history = memory.load_memory_variables({})["chat_history"]
-    #     inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
-    #     print(inputs)
-    #     response = chain.invoke(inputs)
-    #     bot_response = response.content
+
 
     llm = model_manager.get_llm()
     chain = RunnableSequence(prompt | llm)
