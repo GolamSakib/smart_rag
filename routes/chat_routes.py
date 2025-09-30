@@ -137,9 +137,18 @@ async def chat(
     images: Optional[List[UploadFile]] = File(None),
     text: Optional[str] = Form(None),
     session_id: Optional[str] = Form(None)
-):
+):  
+    bot_response = "Hello"
+    return JSONResponse(content={
+        "reply": bot_response,
+        "related_products": [],
+        "session_id": session_id
+    })
     if not images and not text:
         return JSONResponse(status_code=400, content={"error": "At least one image or text input is required"})
+    
+
+
     
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
