@@ -180,7 +180,7 @@ async def chat(
     # Handle greeting/price query for first-time users with no product context
     # CHECK THIS AFTER image processing but BEFORE text search
     if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "প্রাইজ", "দাম", "মূল্য","hi","hello","hey","হাই","হ্যালো","হেলো"]):
-        bot_response = "যেই প্রোডাক্ট টির দাম সম্পর্কে জানতে চাচ্ছেন তার ছবি অথবা কোড টি দিন"
+        bot_response = "আসসালামু আলাইকুম...\n\nআপনি যে প্রোডাক্ট টি সম্পর্কে জানতে চাচ্ছেন, দয়া করে ছবি দিন।"
         return JSONResponse(content={
             "reply": bot_response,
             "related_products": [],
