@@ -30,7 +30,7 @@ class Settings:
     # LLM_BASE_URL = "https://api.siliconflow.com/v1"
     LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
     LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
-    LLM_MAX_TOKENS = 800
+    LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.3
     
     # Ollama (uncomment to use)
