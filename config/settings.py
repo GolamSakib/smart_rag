@@ -31,7 +31,7 @@ class Settings:
     LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
     LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
     LLM_MAX_TOKENS = 1500
-    LLM_TEMPERATURE = 0.3
+    LLM_TEMPERATURE = 0.5
     
     # Ollama (uncomment to use)
     # LLM_MODEL = "mistral:latest"
