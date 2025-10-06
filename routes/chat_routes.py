@@ -227,6 +227,7 @@ async def chat(
     print(inputs)
     response = chain.invoke(inputs)
     bot_response = response.content
+    print("Raw bot response:", bot_response)
 
     # Increment message count in database
     try:
