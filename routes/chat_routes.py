@@ -99,6 +99,7 @@ prompt = PromptTemplate(
 )
 
 
+
 def validate_offer_price(response: str, products: List[dict]) -> str:
     """
     Validate the offered price in the bot's response to ensure it is not below the marginal price.
