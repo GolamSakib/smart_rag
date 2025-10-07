@@ -7,8 +7,11 @@ class Settings:
     # Environment variables
     VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "my_secret_verify_token")
     PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
+    PAGE_ID = os.getenv("PAGE_ID")
     
-    FB_GRAPH_URL = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    # FB_GRAPH_URL = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    FB_GRAPH_URL = f"https://graph.facebook.com/v21.0/{PAGE_ID}/messages?access_token={PAGE_ACCESS_TOKEN}"
+
     
     # Database Configuration
     DB_CONFIG = {
