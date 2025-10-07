@@ -9,8 +9,8 @@ class Settings:
     PAGE_ACCESS_TOKEN = os.getenv("PAGE_ACCESS_TOKEN")
     PAGE_ID = os.getenv("PAGE_ID")
     
-    # FB_GRAPH_URL = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
-    FB_GRAPH_URL = f"https://graph.facebook.com/v21.0/{PAGE_ID}/messages?access_token={PAGE_ACCESS_TOKEN}"
+    FB_GRAPH_URL = f"https://graph.facebook.com/v21.0/me/messages?access_token={PAGE_ACCESS_TOKEN}"
+    
 
     
     # Database Configuration
