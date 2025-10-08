@@ -17,8 +17,6 @@ from datetime import datetime,timedelta
 from services.model_manager import model_manager
 from config.settings import settings
 from services.database_service import db_service
-from services.intent_detector import intent_detector
-from services.chat_tools import chat_tools
 
 
 
@@ -42,7 +40,7 @@ session_memories = defaultdict(lambda: {
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
     template=(
-        "আপনি একজন বন্ধুত্বপূর্ণ এবং পেশাদার বিক্রয় সহকারী। প্রতিটি কথোপকথনের প্রথম বার্তায় মুসলিম সাংস্কৃতিক রীতি অনুসারে ইসলামিক অভিবাদন 'আসসালামু আলাইকুম' দিয়ে শুরু করুন। পরবর্তী বার্তাগুলোতে এই অভিবাদন ব্যবহার করবেন না, যদি না ব্যবহারকারী স্পষ্টভাবে এটি অনুরোধ করেন। সব উত্তর বাংলায় হবে, সংক্ষিপ্ত, আকর্ষণীয় এবং বোঝানোর মতো টোন বজায় রাখুন যাতে ক্রয় উৎসাহিত হয়।\n"
+        "আপনি momsandkidsworld এর একজন বন্ধুত্বপূর্ণ এবং পেশাদার বিক্রয় সহকারী।যারা কিনা ব্যাগ এবং জুতা বিক্রি করে।প্রতিটি কথোপকথনের প্রথম বার্তায় মুসলিম সাংস্কৃতিক রীতি অনুসারে ইসলামিক অভিবাদন 'আসসালামু আলাইকুম' দিয়ে শুরু করুন। পরবর্তী বার্তাগুলোতে এই অভিবাদন ব্যবহার করবেন না, যদি না ব্যবহারকারী স্পষ্টভাবে এটি অনুরোধ করেন। সব উত্তর বাংলায় হবে, সংক্ষিপ্ত, আকর্ষণীয় এবং বোঝানোর মতো টোন বজায় রাখুন যাতে ক্রয় উৎসাহিত হয়।\n"
         "তুমি একজন সংক্ষিপ্ত এবং স্পষ্ট সহকারী। তোমার উত্তরগুলি সর্বদা অল্প বাক্যের মধ্যে সীমিত রাখবে।\n"
         "অপ্রয়োজনীয় ভূমিকা বা উপসংহার দেওয়া থেকে বিরত থাকো।\n"
         "তোমার উত্তরের দৈর্ঘ্য সর্বোচ্চ ১০০ শব্দ-এর মধ্যে রাখো।\n"
@@ -186,34 +184,59 @@ async def chat(
     # Define query early to allow conditional logic
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
-    # Detect user intent first
-    intent, confidence = intent_detector.detect_intent(user_query, has_images=bool(images))
-    print(f"Detected intent: {intent.value} with confidence: {confidence}")
-
-    # Process images if provided
-    processed_images = []
+    # Image search - Process images FIRST, before checking for greetings
     if images:
-        try:
-            for image_file in images:
-                image = Image.open(image_file.file)
-                processed_images.append(image)
-        except Exception as e:
-            print(f"Error processing images: {e}")
-            return JSONResponse(status_code=500, content={"error": "Error processing images"})
-
-    # Use intent-based routing to get products and context
-    retrieved_products, context = chat_tools.process_intent(
-        intent=intent,
-        query=user_query,
-        images=processed_images if processed_images else None,
-        existing_products=session_data["last_products"]
-    )
-
-    # Update session data with retrieved products
-    session_data["last_products"] = retrieved_products
+        retrieved_products = []
+        image_index = model_manager.get_image_index()
+        image_metadata = model_manager.get_image_metadata()
+        
+        if image_index is None or not image_metadata:
+            return JSONResponse(status_code=500, content={"error": "Image search not available"})
+            
+        for image_file in images:
+            image = Image.open(image_file.file)
+            image_embedding = model_manager.get_image_embedding(image)
+            D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
+            retrieved_products.append(image_metadata[I[0][0]])
+        session_data["last_products"] = retrieved_products
 
     print("retrieved_products:", retrieved_products)
-    print("context length:", len(context))
+
+    # Handle greeting/price query for first-time users with no product context
+    # CHECK THIS AFTER image processing but BEFORE text search
+    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "assalamu alaiikum", "salam", "আসসালামু আলাইকুম", "প্রাইজ", "দাম", "মূল্য", "hi", "hello", "hey", "হাই", "হ্যালো", "হেলো", ".", "😊", "😂", "❤️", "👍", "🙏", "🤩", "😁", "😞", "🔥", "✨", "🎉"]):
+        bot_response = "আসসালামু আলাইকুম...\n\nআপনি যে প্রোডাক্ট টি সম্পর্কে জানতে চাচ্ছেন, দয়া করে ছবি দিন।"
+        return JSONResponse(content={
+            "reply": bot_response,
+            "related_products": [],
+            "session_id": session_id
+        })
+
+    # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
+    if text:
+        # text_vector_store = model_manager.get_text_vector_store()
+        # if text_vector_store is None:
+        #     return JSONResponse(status_code=500, content={"error": "Text search not available"})
+            
+        # docs = text_vector_store.similarity_search(text, k=1)
+        # for doc in docs:
+        #     retrieved_products.append(doc.metadata)
+        session_data["last_products"] = retrieved_products
+
+    # Remove duplicates
+    seen_products = set()
+    unique_products = []
+    for product in retrieved_products:
+        identifier = (product.get('name', '').strip(), product.get('code', '').strip())
+        if identifier not in seen_products:
+            seen_products.add(identifier)
+            unique_products.append(product)
+    retrieved_products = unique_products
+
+    # Build context
+    context = "\nAvailable products:\n"
+    for product in retrieved_products:
+        context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
 
     # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
@@ -315,7 +338,7 @@ async def receive_webhook(request: Request):
             if timestamp_ms:
                 msg_time = datetime.fromtimestamp(timestamp_ms / 1000.0)
                 if datetime.utcnow() - msg_time > timedelta(minutes=1):
-                    print(f"Ignoring old message from {msg_time}")
+                    print(f"⚠️ Ignoring old message from {msg_time}")
                     continue
 
             mid = message_data.get("message", {}).get("mid")

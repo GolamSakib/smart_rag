@@ -27,12 +27,9 @@ class Settings:
     
     
     # LLM Configuration
-    # OpenAI
-    # LLM_MODEL = "openai/gpt-oss-120b"
-    LLM_MODEL = "accounts/fireworks/models/gpt-oss-20b"
-    # LLM_BASE_URL = "https://api.siliconflow.com/v1"
-    LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
-    LLM_API_KEY = os.getenv("LLM_API_KEY", "your_api_key_here")
+    # Google Gemini
+    LLM_MODEL = "gemini-2.5-flash"
+    LLM_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyChfZ0uJ0vjcFfvOnq1LG8hBC40LHy2CU4")
     LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.5
     
