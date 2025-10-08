@@ -17,6 +17,8 @@ from datetime import datetime,timedelta
 from services.model_manager import model_manager
 from config.settings import settings
 from services.database_service import db_service
+from services.intent_detector import intent_detector, IntentType
+from services.chat_tools import chat_tools
 
 
 
@@ -184,59 +186,49 @@ async def chat(
     # Define query early to allow conditional logic
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
-    # Image search - Process images FIRST, before checking for greetings
+    # Step 1: Detect user intent
+    intent, confidence = intent_detector.detect_intent(user_query, has_images=bool(images))
+    print(f"Detected intent: {intent.value}, Confidence: {confidence}")
+    
+    # Step 2: Process images first (if any) - always extract products from images
+    image_products = []
     if images:
-        retrieved_products = []
-        image_index = model_manager.get_image_index()
-        image_metadata = model_manager.get_image_metadata()
-        
-        if image_index is None or not image_metadata:
-            return JSONResponse(status_code=500, content={"error": "Image search not available"})
+        try:
+            image_index = model_manager.get_image_index()
+            image_metadata = model_manager.get_image_metadata()
             
-        for image_file in images:
-            image = Image.open(image_file.file)
-            image_embedding = model_manager.get_image_embedding(image)
-            D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
-            retrieved_products.append(image_metadata[I[0][0]])
-        session_data["last_products"] = retrieved_products
+            if image_index is None or not image_metadata:
+                return JSONResponse(status_code=500, content={"error": "Image search not available"})
+                
+            for image_file in images:
+                image = Image.open(image_file.file)
+                image_embedding = model_manager.get_image_embedding(image)
+                D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
+                image_products.append(image_metadata[I[0][0]])
+        except Exception as e:
+            print(f"Error processing images: {e}")
+            return JSONResponse(status_code=500, content={"error": "Error processing images"})
 
-    print("retrieved_products:", retrieved_products)
-
-    # Handle greeting/price query for first-time users with no product context
-    # CHECK THIS AFTER image processing but BEFORE text search
-    if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "assalamu alaiikum", "salam", "আসসালামু আলাইকুম", "প্রাইজ", "দাম", "মূল্য", "hi", "hello", "hey", "হাই", "হ্যালো", "হেলো", ".", "😊", "😂", "❤️", "👍", "🙏", "🤩", "😁", "😞", "🔥", "✨", "🎉"]):
-        bot_response = "আসসালামু আলাইকুম...\n\nআপনি যে প্রোডাক্ট টি সম্পর্কে জানতে চাচ্ছেন, দয়া করে ছবি দিন।"
+    # Step 3: Handle greeting for first-time users with no product context
+    if not image_products and intent == IntentType.GREETING:
+        bot_response = "আসসালামু আলাইকুম...\n\nআপনি যে প্রোডাক্ট টি সম্পর্কে জানতে চাচ্ছেন, দয়া করে ছবি দিন।"
         return JSONResponse(content={
             "reply": bot_response,
             "related_products": [],
             "session_id": session_id
         })
 
-    # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
-    if text:
-        # text_vector_store = model_manager.get_text_vector_store()
-        # if text_vector_store is None:
-        #     return JSONResponse(status_code=500, content={"error": "Text search not available"})
-            
-        # docs = text_vector_store.similarity_search(text, k=1)
-        # for doc in docs:
-        #     retrieved_products.append(doc.metadata)
-        session_data["last_products"] = retrieved_products
-
-    # Remove duplicates
-    seen_products = set()
-    unique_products = []
-    for product in retrieved_products:
-        identifier = (product.get('name', '').strip(), product.get('code', '').strip())
-        if identifier not in seen_products:
-            seen_products.add(identifier)
-            unique_products.append(product)
-    retrieved_products = unique_products
-
-    # Build context
-    context = "\nAvailable products:\n"
-    for product in retrieved_products:
-        context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
+    # Step 4: Use intent-based product search and context building
+    retrieved_products, context = chat_tools.process_intent(
+        intent=intent,
+        query=user_query,
+        images=[Image.open(img.file) for img in images] if images else None,
+        existing_products=image_products
+    )
+    
+    # Update session data with retrieved products
+    session_data["last_products"] = retrieved_products
+    print("retrieved_products:", retrieved_products)
 
     # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
