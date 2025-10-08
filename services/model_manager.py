@@ -9,6 +9,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from config.settings import settings
 from typing import Optional
+from google.oauth2.service_account import Credentials
+import json
 
 
 class ModelManager:
@@ -95,12 +97,41 @@ class ModelManager:
         """Lazy load LLM"""
         if self._models['llm'] is None:
             print("Loading Gemini LLM...")
-            self._models['llm'] = ChatGoogleGenerativeAI(
-                model=settings.LLM_MODEL,
-                google_api_key=settings.LLM_API_KEY,
-                max_tokens=settings.LLM_MAX_TOKENS,
-                temperature=settings.LLM_TEMPERATURE
-            )
+            try:
+                # First try with API key (recommended for Gemini API)
+                if settings.LLM_API_KEY:
+                    print("Using API key authentication...")
+                    self._models['llm'] = ChatGoogleGenerativeAI(
+                        model=settings.LLM_MODEL,
+                        google_api_key=settings.LLM_API_KEY,
+                        max_tokens=settings.LLM_MAX_TOKENS,
+                        temperature=settings.LLM_TEMPERATURE
+                    )
+                else:
+                    # Try OAuth2 credentials as fallback
+                    print("API key not found, trying OAuth2 credentials...")
+                    with open(settings.GOOGLE_CREDENTIALS_FILE, 'r') as f:
+                        creds_data = json.load(f)
+                    
+                    # Check if it's a service account file or web application credentials
+                    if 'type' in creds_data and creds_data['type'] == 'service_account':
+                        credentials = Credentials.from_service_account_file(
+                            settings.GOOGLE_CREDENTIALS_FILE,
+                            scopes=['https://www.googleapis.com/auth/cloud-platform']
+                        )
+                        self._models['llm'] = ChatGoogleGenerativeAI(
+                            model=settings.LLM_MODEL,
+                            credentials=credentials,
+                            max_tokens=settings.LLM_MAX_TOKENS,
+                            temperature=settings.LLM_TEMPERATURE
+                        )
+                    else:
+                        # For web application credentials, we need to use the client_id and client_secret
+                        raise Exception("Web application OAuth2 credentials require additional setup for Gemini API")
+                        
+            except Exception as e:
+                print(f"Error loading Gemini LLM: {e}")
+                raise e
         return self._models['llm']
     
     def get_image_embedding(self, image: Image.Image) -> np.ndarray:
