@@ -28,7 +28,7 @@ class Settings:
     
     # LLM Configuration
     # Google Gemini
-    LLM_MODEL = "gemini-2.5-flash"
+    LLM_MODEL = "gemini-2.5-flash-lite"
     LLM_API_KEY = os.getenv("GOOGLE_API_KEY")
     LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.5
