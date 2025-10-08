@@ -36,12 +36,14 @@ class ChatTools:
             print(f"Error in text product search: {e}")
             return []
     
-    def search_products_by_image(self, images: List[Image.Image]) -> List[Dict]:
+    def search_products_by_image(self, images: List[Image.Image], threshold: float = 0.8, k: int = 1) -> List[Dict]:
         """
-        Search for products using image similarity
+        Search for products using image similarity with threshold filtering
         
         Args:
             images: List of PIL Image objects
+            threshold: Similarity threshold (0.0 to 1.0) - only return results above this threshold
+            k: Number of results to return per image
             
         Returns:
             List of product dictionaries
@@ -56,9 +58,14 @@ class ChatTools:
             products = []
             for image in images:
                 image_embedding = self.model_manager.get_image_embedding(image)
-                D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=1)
-                if I[0][0] < len(image_metadata):
-                    products.append(image_metadata[I[0][0]])
+                D, I = image_index.search(np.array([image_embedding]).astype('float32'), k=k)
+                
+                for i in range(len(I[0])):
+                    similarity_score = 1.0 - D[0][i]  # Convert distance to similarity score
+                    if similarity_score >= threshold and I[0][i] < len(image_metadata):
+                        product = image_metadata[I[0][i]].copy()
+                        product['similarity_score'] = similarity_score  # Add similarity score to product
+                        products.append(product)
             
             return products
         except Exception as e:
@@ -105,27 +112,69 @@ class ChatTools:
         
         return context
     
-    def handle_product_search_intent(self, query: str, images: Optional[List[Image.Image]] = None) -> Tuple[List[Dict], str]:
+    def get_k_value_for_intent(self, intent: IntentType, query: str) -> int:
+        """
+        Get appropriate k value based on intent and query
+        
+        Args:
+            intent: Detected intent type
+            query: User's text query
+            
+        Returns:
+            Appropriate k value for search
+        """
+        query_lower = query.lower()
+        
+        # Check for "all" or "সব" keywords to show more products
+        if any(keyword in query_lower for keyword in ['all', 'সব', 'সকল', 'সবগুলো', 'সবকিছু', 'show all', 'দেখান সব']):
+            return 5  # Show more products for "all" requests
+        
+        # Check for specific product requests
+        if any(keyword in query_lower for keyword in ['specific', 'specific', 'নির্দিষ্ট', 'একটি', 'একটা']):
+            return 1  # Show fewer products for specific requests
+        
+        # Default k values based on intent
+        k_values = {
+            IntentType.PRODUCT_SEARCH: 3,
+            IntentType.PRICE_INQUIRY: 1,
+            IntentType.ORDER_INQUIRY: 1,
+            IntentType.IMAGE_REQUEST: 1,
+            IntentType.BARGAINING: 1,
+            IntentType.GENERAL_CHAT: 1
+        }
+        
+        return k_values.get(intent, 1)
+
+    def handle_product_search_intent(self, query: str, images: Optional[List[Image.Image]] = None, 
+                                   intent: IntentType = IntentType.PRODUCT_SEARCH) -> Tuple[List[Dict], str]:
         """
         Handle product search intent
         
         Args:
             query: User's text query
             images: Optional list of images
+            intent: Detected intent type
             
         Returns:
             Tuple of (products, context_string)
         """
         products = []
         
+        # Get appropriate k value and threshold based on intent
+        k_value = self.get_k_value_for_intent(intent, query)
+        image_threshold = 0.8  # Default threshold for image similarity
+        
         # Search by images first (if provided)
         if images:
-            products.extend(self.search_products_by_image(images))
+            image_products = self.search_products_by_image(images, threshold=image_threshold, k=k_value)
+            products.extend(image_products)
+            print(f"Image search returned {len(image_products)} products with threshold {image_threshold}")
         
         # Search by text (if query provided and no images or additional search needed)
         if query and query.strip():
-            text_products = self.search_products_by_text(query.strip())
+            text_products = self.search_products_by_text(query.strip(), k=k_value)
             products.extend(text_products)
+            print(f"Text search returned {len(text_products)} products with k={k_value}")
         
         # Remove duplicates
         unique_products = self.remove_duplicate_products(products)
@@ -147,13 +196,15 @@ class ChatTools:
         """
         return [], ""
     
-    def handle_price_inquiry_intent(self, query: str, existing_products: List[Dict] = None) -> Tuple[List[Dict], str]:
+    def handle_price_inquiry_intent(self, query: str, existing_products: List[Dict] = None, 
+                                   intent: IntentType = IntentType.PRICE_INQUIRY) -> Tuple[List[Dict], str]:
         """
         Handle price inquiry intent
         
         Args:
             query: User's text query
             existing_products: Previously retrieved products (if any)
+            intent: Detected intent type
             
         Returns:
             Tuple of (products, context_string)
@@ -164,15 +215,17 @@ class ChatTools:
             return existing_products, context
         
         # Otherwise, search for products
-        return self.handle_product_search_intent(query)
+        return self.handle_product_search_intent(query, intent=intent)
     
-    def handle_order_inquiry_intent(self, query: str, existing_products: List[Dict] = None) -> Tuple[List[Dict], str]:
+    def handle_order_inquiry_intent(self, query: str, existing_products: List[Dict] = None, 
+                                   intent: IntentType = IntentType.ORDER_INQUIRY) -> Tuple[List[Dict], str]:
         """
         Handle order inquiry intent
         
         Args:
             query: User's text query
             existing_products: Previously retrieved products (if any)
+            intent: Detected intent type
             
         Returns:
             Tuple of (products, context_string)
@@ -183,7 +236,7 @@ class ChatTools:
             return existing_products, context
         
         # Otherwise, search for products
-        return self.handle_product_search_intent(query)
+        return self.handle_product_search_intent(query, intent=intent)
     
     def handle_delivery_inquiry_intent(self, query: str) -> Tuple[List[Dict], str]:
         """
@@ -221,13 +274,15 @@ class ChatTools:
         """
         return [], ""
     
-    def handle_image_request_intent(self, query: str, existing_products: List[Dict] = None) -> Tuple[List[Dict], str]:
+    def handle_image_request_intent(self, query: str, existing_products: List[Dict] = None, 
+                                   intent: IntentType = IntentType.IMAGE_REQUEST) -> Tuple[List[Dict], str]:
         """
         Handle image request intent
         
         Args:
             query: User's text query
             existing_products: Previously retrieved products (if any)
+            intent: Detected intent type
             
         Returns:
             Tuple of (products, context_string)
@@ -238,7 +293,7 @@ class ChatTools:
             return existing_products, context
         
         # Otherwise, search for products
-        return self.handle_product_search_intent(query)
+        return self.handle_product_search_intent(query, intent=intent)
     
     def handle_track_order_intent(self, query: str) -> Tuple[List[Dict], str]:
         """
@@ -252,13 +307,15 @@ class ChatTools:
         """
         return [], ""
     
-    def handle_bargaining_intent(self, query: str, existing_products: List[Dict] = None) -> Tuple[List[Dict], str]:
+    def handle_bargaining_intent(self, query: str, existing_products: List[Dict] = None, 
+                                intent: IntentType = IntentType.BARGAINING) -> Tuple[List[Dict], str]:
         """
         Handle bargaining intent
         
         Args:
             query: User's text query
             existing_products: Previously retrieved products (if any)
+            intent: Detected intent type
             
         Returns:
             Tuple of (products, context_string)
@@ -269,7 +326,7 @@ class ChatTools:
             return existing_products, context
         
         # Otherwise, search for products
-        return self.handle_product_search_intent(query)
+        return self.handle_product_search_intent(query, intent=intent)
     
     def handle_greeting_intent(self, query: str) -> Tuple[List[Dict], str]:
         """
@@ -314,12 +371,12 @@ class ChatTools:
         
         handler = intent_handlers.get(intent, self.handle_general_chat_intent)
         
-        # Call appropriate handler
+        # Call appropriate handler with intent parameter
         if intent in [IntentType.PRICE_INQUIRY, IntentType.ORDER_INQUIRY, IntentType.IMAGE_REQUEST, 
                      IntentType.BARGAINING]:
-            return handler(query, existing_products)
+            return handler(query, existing_products, intent)
         elif intent == IntentType.PRODUCT_SEARCH:
-            return handler(query, images)
+            return handler(query, images, intent)
         else:
             return handler(query)
 
