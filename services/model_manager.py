@@ -6,7 +6,7 @@ from transformers import CLIPProcessor, CLIPModel
 import torch
 from langchain_community.vectorstores import FAISS as LangchainFAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from config.settings import settings
 from typing import Optional
 
@@ -94,10 +94,10 @@ class ModelManager:
     def get_llm(self):
         """Lazy load LLM"""
         if self._models['llm'] is None:
-            print("Loading Gemini LLM...")
-            self._models['llm'] = ChatGoogleGenerativeAI(
+            print("Loading OpenAI GPT-5 mini LLM...")
+            self._models['llm'] = ChatOpenAI(
                 model=settings.LLM_MODEL,
-                google_api_key=settings.LLM_API_KEY,
+                openai_api_key=settings.LLM_API_KEY,
                 max_tokens=settings.LLM_MAX_TOKENS,
                 temperature=settings.LLM_TEMPERATURE
             )

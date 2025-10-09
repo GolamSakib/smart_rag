@@ -27,9 +27,9 @@ class Settings:
     
     
     # LLM Configuration
-    # Google Gemini
-    LLM_MODEL = "gemini-2.5-flash-lite"
-    LLM_API_KEY = os.getenv("GOOGLE_API_KEY")
+    # OpenAI
+    LLM_MODEL = "gpt-5-mini"
+    LLM_API_KEY = os.getenv("LLM_API_KEY")
     LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.5
     
@@ -37,6 +37,10 @@ class Settings:
     # LLM_MODEL = "mistral:latest"
     # LLM_BASE_URL = "http://localhost:11434/v1"
     # LLM_API_KEY = "not-needed"
+    
+    # Google Gemini (uncomment to use)
+    # LLM_MODEL = "gemini-2.5-flash-lite"
+    # LLM_API_KEY = os.getenv("GOOGLE_API_KEY")
     
     # File Paths
     VECTOR_STORES_PATH = "vector_stores"
