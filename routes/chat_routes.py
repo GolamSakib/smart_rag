@@ -355,7 +355,7 @@ def mark_message_delivered(recipient_id: str):
         "recipient": {"id": recipient_id},
         "sender_action": "mark_delivered"
     }
-    response = requests.post(settings.FB_GRAPH_URL,, json=payload)
+    response = requests.post(settings.FB_GRAPH_URL,json=payload)
     if response.status_code != 200:
         print(f"Error marking delivered: {response.text}")
 
