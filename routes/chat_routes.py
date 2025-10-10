@@ -68,9 +68,10 @@ prompt = PromptTemplate(
         
 
 
-        "যদি ব্যবহারকারী দরদাম করতে চান (যেমন, 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', বা অনুরূপ), তবে বাংলায় আকর্ষণীয়ভাবে উত্তর দিন। সবসময় মূল বার্তা বজায় রাখুন: আমরা সবসময় সেরা মূল্য দিচ্ছি।"
+        "যদি প্রোডাক্টে পূর্বনির্ধারিত কোনো ডিসকাউন্ট থাকে (discount > 0), তাহলে সেই ডিসকাউন্ট অনুযায়ী প্রাইস শুধুমাত্র তখনই গ্রাহককে দেখাও, যখন সে দরদাম করতে চায় (যেমন 'dam komano', 'koman', 'discount', 'cheap', বা অনুরূপ শব্দ ব্যবহার করে)। অন্যথায় শুধুমাত্র মূল দাম (Price) দেখাও।\n"
 
-        "যদি প্রোডাক্টে পূর্বনির্ধারিত কোনো ডিসকাউন্ট থাকে (অর্থাৎ, discount > 0), তাহলে সেই ডিসকাউন্ট অনুযায়ী প্রাইস গ্রাহককে দেখাও।"
+        "যদি প্রোডাক্টে কোনো ডিসকাউন্ট না থাকে (discount = 0 বা null), তাহলে মূল (ফিক্সড) প্রাইসেই বিক্রি করো এবং বলো যে এটি আমাদের সেরা মূল্য, আর কমানো সম্ভব নয়।\n"
+
 
         "যদি প্রোডাক্টে কোনো ডিসকাউন্ট না থাকে (discount = 0 বা null), তাহলে মূল (ফিক্সড) প্রাইসেই বিক্রি করো এবং বলো যে এটি আমাদের সেরা মূল্য, আর কমানো সম্ভব নয়।"
 
@@ -350,24 +351,7 @@ def mark_message_seen(recipient_id: str):
         print(f"Error marking message seen: {response.text}")
         
 
-def mark_message_delivered(recipient_id: str):
-    payload = {
-        "recipient": {"id": recipient_id},
-        "sender_action": "mark_delivered"
-    }
-    response = requests.post(settings.FB_GRAPH_URL,json=payload)
-    if response.status_code != 200:
-        print(f"Error marking delivered: {response.text}")
 
-
-def mark_message_seen(recipient_id: str):
-    payload = {
-        "recipient": {"id": recipient_id},
-        "sender_action": "mark_seen"
-    }
-    response = requests.post(settings.FB_GRAPH_URL,json=payload)
-    if response.status_code != 200:
-        print(f"Error marking seen: {response.text}")
 
 @router.get("/webhook")
 async def verify_webhook(request: Request):
@@ -463,7 +447,6 @@ async def receive_webhook(request: Request):
                     bot_reply = result.get("reply", "Sorry, I didn’t understand that.")
 
             send_to_facebook(sender_id, bot_reply)
-            mark_message_delivered(sender_id)
             mark_message_seen(sender_id)
             
 
