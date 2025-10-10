@@ -28,7 +28,7 @@ class Settings:
     
     # LLM Configuration
     # Grok / x.ai (OpenAI compatible)
-    LLM_MODEL = "grok-4-fast-reasoning"
+    LLM_MODEL = "grok-4-fast-non-reasoning"
     LLM_API_KEY = os.getenv("LLM_API_KEY")
     LLM_BASE_URL = "https://api.x.ai/v1"
     LLM_MAX_TOKENS = 1500
