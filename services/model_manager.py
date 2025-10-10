@@ -94,10 +94,11 @@ class ModelManager:
     def get_llm(self):
         """Lazy load LLM"""
         if self._models['llm'] is None:
-            print("Loading OpenAI GPT-5 mini LLM...")
+            print("Loading Fireworks AI LLM...")
             self._models['llm'] = ChatOpenAI(
                 model=settings.LLM_MODEL,
                 openai_api_key=settings.LLM_API_KEY,
+                openai_api_base=settings.LLM_BASE_URL,
                 max_tokens=settings.LLM_MAX_TOKENS,
                 temperature=settings.LLM_TEMPERATURE
             )
