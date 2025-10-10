@@ -66,20 +66,23 @@ prompt = PromptTemplate(
         "যদি ব্যবহারকারী অর্ডার ট্র্যাক করতে চান (যেমন, 'order track korte chai', 'order kothay', বা অনুরূপ), তবে বাংলায় উত্তর দিন: "
         "'আপনার অর্ডার ট্র্যাক করতে আমাদের WhatsApp-এ যোগাযোগ করুন: https://wa.me/8801796260664 আমরা আপনাকে দ্রুত আপডেট জানাব।'\n"
         
-        "যদি ব্যবহারকারী দরদাম করতে চান (যেমন, 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', বা অনুরূপ), তবে বাংলায় আকর্ষণীয়ভাবে উত্তর দিন। সবসময় মূল বার্তা বজায় রাখুন: আমরা সেরা মূল্য দিচ্ছি, সাধারণত দাম কমানো যায় না, কিন্তু গুণমান ও সেবায় সন্তুষ্টি নিশ্চিত—এখনই অর্ডার করলে দ্রুত ডেলিভারি। প্রতিবার একইভাবে না বলে, বন্ধুত্বপূর্ণভাবে প্যারাফ্রেজ করুন যাতে ব্যবহারকারী বিরক্ত না হন।\n"
 
-        "যদি ব্যবহারকারী দরদাম করতে চান (যেমন, 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', বা অনুরূপ), তবে বাংলায় আকর্ষণীয়ভাবে উত্তর দিন। সবসময় মূল বার্তা বজায় রাখুন: আমরা সবসময় সেরা মূল্য দিচ্ছি, তবে যদি গ্রাহক একাধিকবার বা বারবার দরদাম করেন, তাহলে বন্ধুত্বপূর্ণভাবে বোঝানোর পর সর্বোচ্চ ৫% ডিসকাউন্ট অফার করুন, যেন মনে হয় এটি বিশেষ ছাড় শুধুমাত্র তার জন্য।"
 
-        "যদি ব্যবহারকারী দরদাম করতে চান (যেমন, 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', বা অনুরূপ), তবে বাংলায় আকর্ষণীয়ভাবে উত্তর দিন। সবসময় মূল বার্তা বজায় রাখুন: আমরা সবসময় সেরা মূল্য দিচ্ছি, তবে যদি গ্রাহক একাধিকবার বা বারবার দরদাম করেন, তাহলে বন্ধুত্বপূর্ণভাবে বোঝানোর পর সর্বোচ্চ ৫% ডিসকাউন্ট অফার করুন।"
+        "যদি ব্যবহারকারী দরদাম করতে চান (যেমন, 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', বা অনুরূপ), তবে বাংলায় আকর্ষণীয়ভাবে উত্তর দিন। সবসময় মূল বার্তা বজায় রাখুন: আমরা সবসময় সেরা মূল্য দিচ্ছি।"
 
-        "যদি ব্যবহারকারী দরদাম করতে চান (যেমন, 'dam komano jay kina', 'ektu komano jay na', 'dam ta onk beshi', বা অনুরূপ), তবে বাংলায় আকর্ষণীয়ভাবে উত্তর দিন। সবসময় মূল বার্তা বজায় রাখুন: আমরা সবসময় সেরা মূল্য দিচ্ছি, তবে যদি গ্রাহক একাধিকবার বা বারবার দরদাম করেন, তাহলে বন্ধুত্বপূর্ণভাবে বোঝানোর পর সর্বোচ্চ ৫% ডিসকাউন্ট অফার করুন।"
+        "যদি প্রোডাক্টে পূর্বনির্ধারিত কোনো ডিসকাউন্ট থাকে (অর্থাৎ, discount > 0), তাহলে সেই ডিসকাউন্ট অনুযায়ী প্রাইস গ্রাহককে দেখাও।"
 
-        "ডিসকাউন্ট প্রয়োগের পর দামটি যেন ১০-এর নিকটতম পূর্ণ সংখ্যায় রাউন্ড হয় (nearest 10), তবে এটি কেবল অভ্যন্তরীণভাবে হিসাবের জন্য ব্যবহৃত হবে—গ্রাহককে এ তথ্য জানাবেন না।"
+        "যদি প্রোডাক্টে কোনো ডিসকাউন্ট না থাকে (discount = 0 বা null), তাহলে মূল (ফিক্সড) প্রাইসেই বিক্রি করো এবং বলো যে এটি আমাদের সেরা মূল্য, আর কমানো সম্ভব নয়।"
 
-        "চ্যাট হিস্ট্রির দৈর্ঘ্য বা মেসেজ কাউন্টের উপর ভিত্তি করে ভ্যারিয়েশন আনুন:"
-        "- প্রথমবার দরদাম করলে সরাসরি বোঝান যে দামটি সেরা এবং আর কমানো যাবে না।"
-        "- দ্বিতীয়বার দরদাম করলে হালকা হাস্যরস যোগ করে বোঝান যে এটি সেরা মূল্য।"
-        "- তৃতীয়বার বা তার পরেও দরদাম করলে বিশেষ কাস্টমার হিসেবে ৫% ছাড় অফার করুন এবং নতুন দামটি দেখান (রাউন্ড করা হলেও কাস্টমারকে শুধু দামটি বলুন, রাউন্ডিংয়ের কথা নয়)।"
+        "চ্যাট হিস্ট্রির দৈর্ঘ্য বা মেসেজ কাউন্টের উপর ভিত্তি করে ভ্যারিয়েশন আনো:"
+
+        "প্রথমবার দরদাম করলে: বন্ধুত্বপূর্ণভাবে বলো দামটি সেরা এবং আর কমানো যাবে না।"
+
+        "দ্বিতীয়বার দরদাম করলে: হালকা হাস্যরস যোগ করে বোঝাও যে এটি ফাইনাল দাম।"
+
+        "তৃতীয়বার বা তার পরেও দরদাম করলে: যদি প্রোডাক্টে ডিসকাউন্ট থাকে তবে সেই ডিসকাউন্ট প্রাইস জানাও, না থাকলে আগের মতোই বোঝাও যে এটি আমাদের চূড়ান্ত সেরা অফার।"
+
+
 
         "উদাহরণসমূহ (এগুলো কপি করবেন না, শুধু অনুপ্রাণিত হয়ে নতুন করে লিখুন):\n"
         "১. 'আমরা সবসময় সেরা মূল্যে পণ্য বিক্রি করি, এবং এর থেকে কমানো সম্ভব নয়। তবে আমাদের পণ্যের গুণমান ও সেবার নির্ভরযোগ্যতা আপনাকে নিশ্চিতভাবে সন্তুষ্ট করবে! এখনই অর্ডার করলে দ্রুত ডেলিভারি নিশ্চিত।'\n"
@@ -255,7 +258,8 @@ async def chat(
     # Build context
     context = "\nAvailable products:\n"
     for product in retrieved_products:
-        context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
+        context += f"- Name: {product['name']}, Price: {product['price']},Discounted Price: {product['marginal_price']},Description: {product['description']} Link: {product['link']}\n"
+    print("Context for LLM:", context)
 
     # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
@@ -331,6 +335,40 @@ def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str
         print(f"Error sending message: {response.text}")
     return response.status_code == 200
 
+def mark_message_seen(recipient_id: str):
+    """Tell Facebook that the bot's messages have been 'seen' by the user."""
+    payload = {
+        "recipient": {"id": recipient_id},
+        "sender_action": "mark_seen"
+    }
+    response = requests.post(
+        settings.FB_GRAPH_URL,
+        json=payload,
+        headers={"Content-Type": "application/json"}
+    )
+    if response.status_code != 200:
+        print(f"Error marking message seen: {response.text}")
+        
+
+def mark_message_delivered(recipient_id: str):
+    payload = {
+        "recipient": {"id": recipient_id},
+        "sender_action": "mark_delivered"
+    }
+    response = requests.post(settings.FB_GRAPH_URL,, json=payload)
+    if response.status_code != 200:
+        print(f"Error marking delivered: {response.text}")
+
+
+def mark_message_seen(recipient_id: str):
+    payload = {
+        "recipient": {"id": recipient_id},
+        "sender_action": "mark_seen"
+    }
+    response = requests.post(settings.FB_GRAPH_URL,json=payload)
+    if response.status_code != 200:
+        print(f"Error marking seen: {response.text}")
+
 @router.get("/webhook")
 async def verify_webhook(request: Request):
     mode = request.query_params.get("hub.mode")
@@ -393,7 +431,7 @@ async def receive_webhook(request: Request):
             
 
             if not incoming_msg and not files:
-                send_to_facebook(sender_id, "Please send a text message or an image to search for products.")
+                send_to_facebook(sender_id, "দয়া করে লিখে বলুন")
                 continue
 
             session_id = sender_id
@@ -425,5 +463,8 @@ async def receive_webhook(request: Request):
                     bot_reply = result.get("reply", "Sorry, I didn’t understand that.")
 
             send_to_facebook(sender_id, bot_reply)
+            mark_message_delivered(sender_id)
+            mark_message_seen(sender_id)
+            
 
     return JSONResponse(status_code=200, content={"status": "ok"})

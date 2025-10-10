@@ -63,7 +63,7 @@
                             <input type="text" class="form-control" id="productCode" required>
                         </div>
                         <div class="form-group col-md-4">
-                            <label for="marginalPrice">Marginal Price</label>
+                            <label for="marginalPrice">Discount Price</label>
                             <input type="number" class="form-control" id="marginalPrice" required>
                         </div>
                     </div>
@@ -95,7 +95,7 @@
                             <th>Name</th>
                             <th>Description</th>
                             <th>Price</th>
-                            <th>Marginal Price</th>
+                            <th>Discount Price</th>
                             <th>Code</th>
                             <th>Link</th>
                             <th>Images</th>
@@ -118,8 +118,8 @@
     </div>
 
     <script>
-        const API_URL = 'https://chat.momsandkidsworld.com';
-        <!-- const API_URL = 'http://localhost:8000'; -->
+        // const API_URL = 'https://chat.momsandkidsworld.com';
+        API_URL = 'http://localhost:8000';
 
         // --- Image Management ---
         async function uploadImage() {
