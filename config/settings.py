@@ -27,10 +27,10 @@ class Settings:
     
     
     # LLM Configuration
-    # Fireworks AI (OpenAI compatible)
-    LLM_MODEL = "accounts/fireworks/models/deepseek-v3p1-terminus"
+    # Grok / x.ai (OpenAI compatible)
+    LLM_MODEL = "grok-4-fast-reasoning"
     LLM_API_KEY = os.getenv("LLM_API_KEY")
-    LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
+    LLM_BASE_URL = "https://api.x.ai/v1"
     LLM_MAX_TOKENS = 1500
     LLM_TEMPERATURE = 0.5
     

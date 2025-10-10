@@ -29,14 +29,19 @@ def test_openai_integration():
         test_prompt = "Hello, can you respond with 'Integration successful'?"
         
         response = llm.invoke(test_prompt)
-        print(f"[OK] Response received: {response.content}")
+        # Safely print the response, replacing unsupported characters
+        safe_response = response.content.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
+        print(f"[OK] Response received: {safe_response}")
         
         # Test 4: Test with system prompt (as used in the chat system)
         print("\nTesting system response...")
         system_prompt = "You are a friendly sales assistant for momsandkidsworld. Give a brief welcome message."
         
         system_response = llm.invoke(system_prompt)
-        print(f"[OK] System response: {system_response.content}")
+        
+        # Safely print the system response, replacing unsupported characters
+        safe_system_response = system_response.content.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding)
+        print(f"[OK] System response: {safe_system_response}")
         
         print("\n[SUCCESS] All tests passed! OpenAI GPT model integration is working correctly.")
         return True
