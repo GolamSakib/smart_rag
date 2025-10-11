@@ -289,8 +289,8 @@ async def chat(
     # Save to memory
     memory.save_context({"user_query": user_query}, {"output": bot_response})
 
-    # Check if message count has reached 15 and clear memory if so
-    if session_data["message_count"] >= 20:
+    # Check if message count has reached 3 and clear memory if so
+    if session_data["message_count"] >= 30:
         session_memories[session_id] = {
             "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
             "last_products": [],
