@@ -34,6 +34,7 @@ class Settings:
     LLM_MAX_TOKENS = 400
     LLM_TEMPERATURE = 0.5
     
+    
     # Ollama (uncomment to use)
     # LLM_MODEL = "mistral:latest"
     # LLM_BASE_URL = "http://localhost:11434/v1"
