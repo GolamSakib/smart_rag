@@ -31,7 +31,7 @@ class Settings:
     LLM_MODEL = "grok-4-fast-non-reasoning"
     LLM_API_KEY = os.getenv("LLM_API_KEY")
     LLM_BASE_URL = "https://api.x.ai/v1"
-    LLM_MAX_TOKENS = 500
+    LLM_MAX_TOKENS = 400
     LLM_TEMPERATURE = 0.5
     
     # Ollama (uncomment to use)
