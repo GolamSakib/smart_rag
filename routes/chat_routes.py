@@ -70,19 +70,17 @@ def extract_code_from_context(context: str) -> str:
 
 # ===== TOOL EXECUTOR =====
 def execute_send_product_images(context: str, recipient_id: str) -> str:
-    """Send images ONE BY ONE to Facebook"""
+    """Send MAX 2 images to Facebook - FIXED PATHS + LOOP LIMIT!"""
     print(f"🚀 STARTING: execute_send_product_images()")
-    print(f"📝 Context: {context[:100]}...")  # First 100 chars
+    print(f"📝 Context: {context[:100]}...")
     print(f"👤 Recipient ID: {recipient_id}")
     
-    # ===== STEP 1: EXTRACT CODE =====
     code = extract_code_from_context(context)
     print(f"🔍 EXTRACTED CODE: '{code}'")
     if not code:
         print("❌ ERROR: No code found!")
         return "❌ No code found in name"
     
-    # ===== STEP 2: LOAD PRODUCTS =====
     print("📂 Loading products.json...")
     try:
         with open(settings.PRODUCTS_JSON_PATH, 'r', encoding='utf-8') as f:
@@ -92,7 +90,6 @@ def execute_send_product_images(context: str, recipient_id: str) -> str:
         print(f"❌ ERROR reading products: {e}")
         return f"❌ Error reading products"
     
-    # ===== STEP 3: FIND MATCHING PRODUCTS =====
     matching_products = [p for p in products_data if str(p.get('code')) == str(code)]
     print(f"🎯 Found {len(matching_products)} matching products for code '{code}'")
     
@@ -100,37 +97,63 @@ def execute_send_product_images(context: str, recipient_id: str) -> str:
         print(f"❌ No products found for '{code}'")
         return f"❌ No products for code '{code}'"
     
-    # ===== STEP 4: SEND IMAGES ONE BY ONE =====
     success_count = 0
+    max_images = 2  # ===== LIMIT: MAX 2 IMAGES =====
+    
     for i, product in enumerate(matching_products, 1):
         print(f"\n--- PRODUCT {i}/{len(matching_products)} ---")
         print(f"📦 Product: {product['name']}")
         
-        if 'image_path' in product:
+        if 'image_path' in product and success_count < max_images:
             image_paths = product['image_path']
             if isinstance(image_paths, str):
                 image_paths = [image_paths]
             print(f"🖼️  Found {len(image_paths)} images: {image_paths}")
             
             for j, img_path in enumerate(image_paths, 1):
-                full_path = os.path.join(settings.PRODUCT_IMAGES_PATH, img_path)
-                print(f"📤 Sending image {j}/{len(image_paths)}: {full_path}")
+                # ===== STOP AFTER 2 IMAGES =====
+                if success_count >= max_images:
+                    print(f"🛑 MAX 2 IMAGES REACHED! Stopping loop...")
+                    break
                 
-                if send_to_facebook(recipient_id, image_path=full_path):
-                    success_count += 1
-                    print(f"✅ SUCCESS: Sent image {j} for {product['name']}")
+                # ===== FIXED PATH LOGIC =====
+                print(f"🏠 BASE PATH: '{settings.PRODUCT_IMAGES_PATH}'")
+                print(f"📄 RAW IMAGE: '{img_path}'")
+                
+                clean_img_path = img_path
+                if img_path.startswith(settings.PRODUCT_IMAGES_PATH + '/'):
+                    clean_img_path = img_path[len(settings.PRODUCT_IMAGES_PATH + '/'):]
+                    print(f"🧹 CLEANED: '{clean_img_path}'")
+                elif img_path.startswith(settings.PRODUCT_IMAGES_PATH + '\\'):
+                    clean_img_path = img_path[len(settings.PRODUCT_IMAGES_PATH + '\\'):]
+                    print(f"🧹 CLEANED: '{clean_img_path}'")
+                
+                full_path = os.path.join(settings.PRODUCT_IMAGES_PATH, clean_img_path)
+                print(f"📤 SENDING: '{full_path}' (Image {success_count + 1}/2)")
+                
+                if os.path.exists(full_path):
+                    print(f"✅ FILE EXISTS: {full_path}")
+                    if send_to_facebook(recipient_id, image_path=full_path):
+                        success_count += 1
+                        print(f"✅ SUCCESS: Sent image {success_count}/2 for {product['name']}")
+                    else:
+                        print(f"❌ FB ERROR: Could not send {full_path}")
                 else:
-                    print(f"❌ FAILED: Could not send {full_path}")
+                    print(f"❌ FILE MISSING: {full_path}")
+                    alt_path = clean_img_path
+                    print(f"🔄 TRYING ALTERNATIVE: '{alt_path}'")
+                    if os.path.exists(alt_path):
+                        if send_to_facebook(recipient_id, image_path=alt_path):
+                            success_count += 1
+                            print(f"✅ SUCCESS: Sent via alt path {success_count}/2")
         else:
             print(f"⚠️  No images found for {product['name']}")
         
-        # Stop after processing 2 products
-        if i >= 2:
-            print("🛑 Stopping after 2 products as requested")
+        # ===== FINAL STOP =====
+        if success_count >= max_images:
             break
     
-    # ===== FINAL RESULT =====
-    print(f"\n🎉 TOTAL: Sent {success_count} images for code '{code}'")
+    print(f"\n🎉 TOTAL: Sent {success_count} images for code '{code}' (MAX 2)")
     return f"✅ Sent {success_count} images for code '{code}'!"
 
 # In-memory store for per-session memory
