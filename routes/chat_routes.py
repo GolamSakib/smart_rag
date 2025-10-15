@@ -13,157 +13,32 @@ import requests
 import re
 import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime,timedelta
-import os
-import json
+from datetime import datetime,timedelta  
 from services.model_manager import model_manager
 from config.settings import settings
 from services.database_service import db_service
+
+
+
+
+
 
 # Keep a small in-memory cache to avoid duplicate processing
 processed_messages = set()
 
 router = APIRouter()
 
-# ===== GROK TOOL DEFINITION =====
-TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "send_product_images_to_facebook",
-            "description": "Extract code AFTER '=' from name like 'bag code=009b', send images ONE BY ONE to Facebook.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "context": {"type": "string", "description": "Full context with product names"},
-                    "recipient_id": {"type": "string", "description": "Facebook user ID"}
-                },
-                "required": ["context", "recipient_id"]
-            }
-        }
-    }
-]
-
-# ===== EXTRACTOR FUNCTION =====
-def extract_code_from_context(context: str) -> str:
-    """Extract code AFTER '=' from name like 'black=00b' or 'bag code=009b'"""
-    print(f"🔍 SEARCHING in context: {context[:100]}...")
-    
-    # ===== PATTERN 1: Simple "Name: black=00b" =====
-    pattern1 = r'Name[:\s]*[^=]*=([^\s",]+)'
-    match1 = re.search(pattern1, context, re.IGNORECASE)
-    if match1:
-        code = match1.group(1)
-        print(f"✅ PATTERN 1 MATCH: '{code}'")
-        return code
-    
-    # ===== PATTERN 2: Complex "Name: bag code=009b" =====
-    pattern2 = r'name[:\s]*"[^"]*code=([^\s",]+)'
-    match2 = re.search(pattern2, context, re.IGNORECASE)
-    if match2:
-        code = match2.group(1)
-        print(f"✅ PATTERN 2 MATCH: '{code}'")
-        return code
-    
-    print("❌ NO MATCH FOUND!")
-    return None
-
-# ===== TOOL EXECUTOR =====
-def execute_send_product_images(context: str, recipient_id: str) -> str:
-    """Send MAX 2 images to Facebook - FIXED PATHS + LOOP LIMIT!"""
-    print(f"🚀 STARTING: execute_send_product_images()")
-    print(f"📝 Context: {context[:100]}...")
-    print(f"👤 Recipient ID: {recipient_id}")
-    
-    code = extract_code_from_context(context)
-    print(f"🔍 EXTRACTED CODE: '{code}'")
-    if not code:
-        print("❌ ERROR: No code found!")
-        return "❌ No code found in name"
-    
-    print("📂 Loading products.json...")
-    try:
-        with open(settings.PRODUCTS_JSON_PATH, 'r', encoding='utf-8') as f:
-            products_data = json.load(f)
-        print(f"✅ Loaded {len(products_data)} products")
-    except Exception as e:
-        print(f"❌ ERROR reading products: {e}")
-        return f"❌ Error reading products"
-    
-    matching_products = [p for p in products_data if str(p.get('code')) == str(code)]
-    print(f"🎯 Found {len(matching_products)} matching products for code '{code}'")
-    
-    if not matching_products:
-        print(f"❌ No products found for '{code}'")
-        return f"❌ No products for code '{code}'"
-    
-    success_count = 0
-    max_images = 2  # ===== LIMIT: MAX 2 IMAGES =====
-    
-    for i, product in enumerate(matching_products, 1):
-        print(f"\n--- PRODUCT {i}/{len(matching_products)} ---")
-        print(f"📦 Product: {product['name']}")
-        
-        if 'image_path' in product and success_count < max_images:
-            image_paths = product['image_path']
-            if isinstance(image_paths, str):
-                image_paths = [image_paths]
-            print(f"🖼️  Found {len(image_paths)} images: {image_paths}")
-            
-            for j, img_path in enumerate(image_paths, 1):
-                # ===== STOP AFTER 2 IMAGES =====
-                if success_count >= max_images:
-                    print(f"🛑 MAX 2 IMAGES REACHED! Stopping loop...")
-                    break
-                
-                # ===== FIXED PATH LOGIC =====
-                print(f"🏠 BASE PATH: '{settings.PRODUCT_IMAGES_PATH}'")
-                print(f"📄 RAW IMAGE: '{img_path}'")
-                
-                clean_img_path = img_path
-                if img_path.startswith(settings.PRODUCT_IMAGES_PATH + '/'):
-                    clean_img_path = img_path[len(settings.PRODUCT_IMAGES_PATH + '/'):]
-                    print(f"🧹 CLEANED: '{clean_img_path}'")
-                elif img_path.startswith(settings.PRODUCT_IMAGES_PATH + '\\'):
-                    clean_img_path = img_path[len(settings.PRODUCT_IMAGES_PATH + '\\'):]
-                    print(f"🧹 CLEANED: '{clean_img_path}'")
-                
-                full_path = os.path.join(settings.PRODUCT_IMAGES_PATH, clean_img_path)
-                print(f"📤 SENDING: '{full_path}' (Image {success_count + 1}/2)")
-                
-                if os.path.exists(full_path):
-                    print(f"✅ FILE EXISTS: {full_path}")
-                    if send_to_facebook(recipient_id, image_path=full_path):
-                        success_count += 1
-                        print(f"✅ SUCCESS: Sent image {success_count}/2 for {product['name']}")
-                    else:
-                        print(f"❌ FB ERROR: Could not send {full_path}")
-                else:
-                    print(f"❌ FILE MISSING: {full_path}")
-                    alt_path = clean_img_path
-                    print(f"🔄 TRYING ALTERNATIVE: '{alt_path}'")
-                    if os.path.exists(alt_path):
-                        if send_to_facebook(recipient_id, image_path=alt_path):
-                            success_count += 1
-                            print(f"✅ SUCCESS: Sent via alt path {success_count}/2")
-        else:
-            print(f"⚠️  No images found for {product['name']}")
-        
-        # ===== FINAL STOP =====
-        if success_count >= max_images:
-            break
-    
-    print(f"\n🎉 TOTAL: Sent {success_count} images for code '{code}' (MAX 2)")
-    return f"✅ Sent {success_count} images for code '{code}'!"
 
 # In-memory store for per-session memory
 session_memories = defaultdict(lambda: {
     "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
-    "last_products": [],
-    "message_count": 0
+    "last_products": [],  # Store last retrieved products
+    "message_count": 0    # Track number of messages in the session
 })
 
-# ===== COMPLETE PROMPT (YOUR ORIGINAL + TOOL INSTRUCTION) =====
+# Updated Prompt template with discount calculation rule
+from langchain.prompts import PromptTemplate
+
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
     template=(
@@ -182,10 +57,10 @@ prompt = PromptTemplate(
         "'আমাদের সব প্রডাক্ট চায়না ও থাইল্যান্ড থেকে সরাসরি ইমপোর্ট করা—কোয়ালিটিতে কোনো আপস নেই। আগে পণ্য, পরে টাকা—আপনার অনলাইন কেনাকাটা ১০০% নিরাপদ! ভয়ের কোনো কারণ নেই—আগে তো কোনো টাকা দিতে হচ্ছে না;  রিটার্ন অপশনও রয়েছে'\n"
         "যদি ব্যবহারকারী ছবি আপলোড করেন বা কোনো পণ্য সম্পর্কে জিজ্ঞাসা করেন, তবে শুধু মূল্য (টাকায়) অন্তর্ভুক্ত করুন, এবং বর্ণনা শুধুমাত্র তখনই দিন যদি ব্যবহারকারী স্পষ্টভাবে বর্ণনা চান।\n"
         
-        "যদি ব্যবহারকারী কোনো পণ্যের ছবি দেখতে চান তাহলে **send_product_images_to_facebook** টুলটি ব্যবহার করুন এবং ব্যবহারকারীকে বলুন যে ছবিগুলো পাঠানো হচ্ছে। অন্য কোনো ক্ষেত্রে সাধারণ টেক্সট উত্তর দিন।\n"
-
-        "যদি ব্যবহারকারী 'pp', 'price', বা অনুরূপ কিছু (কেস-ইনসেন্সিটিভ) জিজ্ঞাসা করেন, তবে কনটেক্সট থেকে সবচেয়ে প্রাসঙ্গিক পণ্যের মূল্য শুধুমাত্র টাকায় উল্লেখ করুন এবং ব্যবহারকারীকে প্রোডাক্ট এর ছবি দেখার জন্য আগ্রহী করুন।\n"
+        "যদি ব্যবহারকারী পণ্যের ছবি দেখতে চান (যেমন, 'image dekhte chai', 'chobi dekhan', বা অনুরূপ), তবে বাংলায় উত্তর দিন: "
+        "'প্রিয় গ্রাহক কিছুক্ষণ অপেক্ষা করুন,আমাদের একজন মডারেটর এসে আপনাকে ছবিগুলি দেখাবে'\n"
         
+        "যদি ব্যবহারকারী 'pp', 'price', বা অনুরূপ কিছু (কেস-ইনসেন্সিটিভ) জিজ্ঞাসা করেন, তবে কনটেক্সট থেকে সবচেয়ে প্রাসঙ্গিক পণ্যের মূল্য শুধুমাত্র টাকায় উল্লেখ করুন।\n"
         "যদি ব্যবহারকারী জিজ্ঞাসা করেন পণ্যটি ছবির মতো কিনা (যেমন, 'hubohu chobir moto'), তবে বাংলায় উত্তর দিন: "
         "'হ্যাঁ, পণ্য একদম হুবহু ছবির মতো! আমরা গ্যারান্টি দিচ্ছি, ছবিতে যা দেখছেন, ঠিক তাই পাবেন।'\n"
         "যদি ব্যবহারকারী অর্ডার করতে চান (যেমন 'order', 'অর্ডার', 'kina', 'কিনা', 'korte chai', 'করতে চাই'), এবং পণ্যের বর্ণনায় জুতার সাইজের (যেমন 'সাইজ=36,37') তথ্য থাকে, তবে তাকে জিজ্ঞেস করুন 'আপনি কোন সাইজের জুতা অর্ডার করতে চাচ্ছেন? দয়া করে আপনার সাইজ জানিয়ে দিন।' অন্যথায় তাকে বলুন '📦 অর্ডার কনফার্ম করতে দয়া করে নিচের তথ্য দিন:\n🏠 এলাকা (যেমন– চাষাড়া, ধানমন্ডি)\n📱 মোবাইল নাম্বার\n💰 কোনো অগ্রিম পেমেন্ট নেই! পণ্য হাতে পেয়ে চেক করে ক্যাশ অন ডেলিভারিতে পেমেন্ট করুন।\n"
@@ -250,6 +125,7 @@ prompt = PromptTemplate(
     )
 )
 
+
 def validate_offer_price(response: str, products: List[dict]) -> str:
     """
     Validate the offered price in the bot's response to ensure it is not below the marginal price.
@@ -289,21 +165,30 @@ def add_to_google_sheet(phone_number: str):
 async def chat(
     images: Optional[List[UploadFile]] = File(None),
     text: Optional[str] = Form(None),
-    session_id: Optional[str] = Form(None),
-    recipient_id: Optional[str] = Form(None)
-):
+    session_id: Optional[str] = Form(None)
+):  
+    # bot_response = "Hello"
+    # return JSONResponse(content={
+    #     "reply": bot_response,
+    #     "related_products": [],
+    #     "session_id": session_id
+    # })
     if not images and not text:
         return JSONResponse(status_code=400, content={"error": "At least one image or text input is required"})
+    
 
+
+    
     session_id = session_id or str(uuid4())
-    recipient_id = recipient_id or session_id
     session_data = session_memories[session_id]
     memory = session_data["memory"]
     retrieved_products = session_data["last_products"]
-    session_data["message_count"] += 1
+    session_data["message_count"] += 1  # Increment message count
 
+    # Define query early to allow conditional logic
     user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
 
+    # Image search - Process images FIRST, before checking for greetings
     if images:
         retrieved_products = []
         image_index = model_manager.get_image_index()
@@ -321,17 +206,28 @@ async def chat(
 
     print("retrieved_products:", retrieved_products)
 
+    # Handle greeting/price query for first-time users with no product context
+    # CHECK THIS AFTER image processing but BEFORE text search
     if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "assalamu alaiikum", "salam", "আসসালামু আলাইকুম","প্রাইজ","প্রাইস কত","দাম", "মূল্য", "hi", "hello", "hey", "হাই", "হ্যালো", "হেলো", ".", "😊", "😂", "❤️", "👍", "🙏", "🤩", "😁", "😞", "🔥", "✨", "🎉"]):
-        bot_response = "আসসালামু আলাইকুম...\n\nআপনি যে প্রোডাক্ট টি সম্পর্কে জানতে চাচ্ছেন, দয়া করে ছবি দিন."
+        bot_response = "আসসালামু আলাইকুম...\n\nআপনি যে প্রোডাক্ট টি সম্পর্কে জানতে চাচ্ছেন, দয়া করে ছবি দিন।"
         return JSONResponse(content={
             "reply": bot_response,
             "related_products": [],
             "session_id": session_id
         })
 
+    # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
     if text:
+        # text_vector_store = model_manager.get_text_vector_store()
+        # if text_vector_store is None:
+        #     return JSONResponse(status_code=500, content={"error": "Text search not available"})
+            
+        # docs = text_vector_store.similarity_search(text, k=1)
+        # for doc in docs:
+        #     retrieved_products.append(doc.metadata)
         session_data["last_products"] = retrieved_products
 
+    # Remove duplicates
     seen_products = set()
     unique_products = []
     for product in retrieved_products:
@@ -341,52 +237,29 @@ async def chat(
             unique_products.append(product)
     retrieved_products = unique_products
 
+    # Build context
     context = "\nAvailable products:\n"
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
     print("Context for LLM:", context)
 
+    # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
     match = re.search(phone_pattern, user_query)
     if match:
         phone_number = match.group(0)
         add_to_google_sheet(phone_number)
 
-    # ===== GROK TOOL CALLING =====
+    llm = model_manager.get_llm()
+    chain = RunnableSequence(prompt | llm)
     chat_history = memory.load_memory_variables({})["chat_history"]
-    full_prompt = prompt.format(context=context, chat_history=chat_history, user_query=user_query)
-    
-    response = requests.post(
-        "https://api.x.ai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {settings.LLM_API_KEY}"},
-        json={
-            "model": "grok-4-fast-non-reasoning",
-            "messages": [
-                {"role": "system", "content": full_prompt},
-            ],
-            "tools": TOOLS,
-            "tool_choice": "auto"
-        }
-    ).json()
+    inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
+    print(inputs)
+    response = chain.invoke(inputs)
+    bot_response = response.content
+    print("Raw bot response:", bot_response)
 
-    print(f"🔍 USER: '{user_query}'")
-    message = response["choices"][0]["message"]
-    print(f"⚡ TOOL CALLED? {bool(message.get('tool_calls'))}")
-
-    if message.get("tool_calls"):
-        print("🎉 SENDING IMAGES!")
-        for tool_call in message["tool_calls"]:
-            if tool_call["function"]["name"] == "send_product_images_to_facebook":
-                args = json.loads(tool_call["function"]["arguments"])
-                result = execute_send_product_images(
-                    context=context, 
-                    recipient_id=recipient_id
-                )
-                bot_response = f"প্রিয় গ্রাহক, ছবিগুলো Facebook এ পাঠানো হয়েছে!"
-    else:
-        print("📝 NORMAL REPLY")
-        bot_response = message["content"]
-
+    # Increment message count in database
     try:
         with db_service.get_cursor() as (cursor, connection):
             cursor.execute("UPDATE business_settings SET value = value + 1 WHERE `key` = 'number_of_message'")
@@ -394,15 +267,17 @@ async def chat(
     except Exception as e:
         print(f"Error incrementing message count: {e}")
 
+    # Save to memory
     memory.save_context({"user_query": user_query}, {"output": bot_response})
 
+    # Check if message count has reached 3 and clear memory if so
     if session_data["message_count"] >= 30:
         session_memories[session_id] = {
             "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
             "last_products": [],
             "message_count": 0
         }
-        print(f"Session memory cleared for session_id: {session_id} after 30 messages")
+        print(f"Session memory cleared for session_id: {session_id} after 15 messages")
 
     return JSONResponse(content={
         "reply": bot_response,
@@ -410,7 +285,7 @@ async def chat(
         "session_id": session_id
     })
 
-def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str = None, image_path: str = None):
+def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str = None):
     """Send message or image back to user via Facebook Graph API."""
     if image_url:
         payload = {
@@ -426,50 +301,18 @@ def send_to_facebook(recipient_id: str, message_text: str = None, image_url: str
                 }
             }
         }
-        response = requests.post(
-            settings.FB_GRAPH_URL,
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        )
-    elif image_path:
-        payload = {
-            'messaging_type': 'RESPONSE',
-            'recipient': json.dumps({'id': recipient_id}),
-        }
-        try:
-            with open(image_path, 'rb') as f:
-                image_data = f.read()
-            
-            files = {
-                'filedata': (os.path.basename(image_path), image_data, 'image/jpeg')
-            }
-            
-            message_payload = {'attachment': {'type': 'image', 'payload': {'is_reusable': True}}}
-            payload['message'] = json.dumps(message_payload)
-
-            response = requests.post(
-                settings.FB_GRAPH_URL,
-                data=payload,
-                files=files
-            )
-        except FileNotFoundError:
-            print(f"Error: Image file not found at {image_path}")
-            return False
-        except Exception as e:
-            print(f"Error sending local image: {e}")
-            return False
     else:
         payload = {
             "messaging_type": "RESPONSE",
             "recipient": {"id": recipient_id},
             "message": {"text": message_text}
         }
-        response = requests.post(
-            settings.FB_GRAPH_URL,
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        )
     
+    response = requests.post(
+        settings.FB_GRAPH_URL,
+        json=payload,
+        headers={"Content-Type": "application/json"}
+    )
     if response.status_code != 200:
         print(f"Error sending message: {response.text}")
     return response.status_code == 200
@@ -487,6 +330,9 @@ def mark_message_seen(recipient_id: str):
     )
     if response.status_code != 200:
         print(f"Error marking message seen: {response.text}")
+        
+
+
 
 @router.get("/webhook")
 async def verify_webhook(request: Request):
@@ -523,9 +369,9 @@ async def receive_webhook(request: Request):
                 continue
             if mid:
                 processed_messages.add(mid)
+    
                 if len(processed_messages) > 100:
                     processed_messages.clear()
-    
             sender_id = message_data["sender"]["id"]
             print("Received message_data:", message_data)
             incoming_msg = message_data["message"].get("text", "")
@@ -554,29 +400,20 @@ async def receive_webhook(request: Request):
                 continue
 
             session_id = sender_id
-            
             async with httpx.AsyncClient() as client:
-                print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "recipient_id": sender_id})
+                print("Sending to /chat:", {"text": incoming_msg, "session_id": session_id, "files_count": len(files)})
                 try:
                     if files:
                         response = await client.post(
                             "https://chat.momsandkidsworld.com/api/chat",
-                            data={
-                                "text": incoming_msg, 
-                                "session_id": session_id,
-                                "recipient_id": sender_id
-                            },
+                            data={"text": incoming_msg, "session_id": session_id},
                             files=files,
                             timeout=30.0
                         )
                     else:
                         response = await client.post(
                             "https://chat.momsandkidsworld.com/api/chat",
-                            data={
-                                "text": incoming_msg, 
-                                "session_id": session_id,
-                                "recipient_id": sender_id
-                            },
+                            data={"text": incoming_msg, "session_id": session_id},
                             timeout=30.0
                         )
                 except httpx.RequestError as e:
@@ -588,7 +425,7 @@ async def receive_webhook(request: Request):
                     bot_reply = "Sorry, something went wrong."
                 else:
                     result = response.json()
-                    bot_reply = result.get("reply", "Sorry, I didn't understand that.")
+                    bot_reply = result.get("reply", "Sorry, I didn’t understand that.")
 
             send_to_facebook(sender_id, bot_reply)
             mark_message_seen(sender_id)
