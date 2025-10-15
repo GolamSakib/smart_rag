@@ -382,7 +382,7 @@ async def chat(
                     context=context, 
                     recipient_id=recipient_id
                 )
-                bot_response = f"প্রিয় গ্রাহক, ছবিগুলো Facebook এ পাঠানো হয়েছে! {result}"
+                bot_response = f"প্রিয় গ্রাহক, ছবিগুলো Facebook এ পাঠানো হয়েছে!"
     else:
         print("📝 NORMAL REPLY")
         bot_response = message["content"]
