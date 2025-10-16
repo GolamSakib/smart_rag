@@ -34,6 +34,10 @@ class Settings:
     LLM_MAX_TOKENS = 520
     LLM_TEMPERATURE = 0.5
     
+    FALLBACK_LLM_MODEL = "accounts/fireworks/models/deepseek-v3p1-terminus"
+    FALLBACK_LLM_API_KEY = os.getenv("FALLBACK_LLM_API_KEY")
+    FALLBACK_LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
+    
     
     # Ollama (uncomment to use)
     # LLM_MODEL = "mistral:latest"

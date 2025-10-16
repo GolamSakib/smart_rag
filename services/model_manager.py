@@ -30,7 +30,8 @@ class ModelManager:
             'image_index': None,
             'text_vector_store': None,
             'image_metadata': None,
-            'llm': None
+            'llm': None,
+            'fallback_llm': None
         }
     
     def get_clip_model(self):
@@ -94,7 +95,7 @@ class ModelManager:
     def get_llm(self):
         """Lazy load LLM"""
         if self._models['llm'] is None:
-            print("Loading Grok LLM...")
+            print(f"Loading Grok LLM: {settings.LLM_MODEL}...")
             self._models['llm'] = ChatOpenAI(
                 model=settings.LLM_MODEL,
                 openai_api_key=settings.LLM_API_KEY,
@@ -103,6 +104,20 @@ class ModelManager:
                 temperature=settings.LLM_TEMPERATURE
             )
         return self._models['llm']
+    
+    def get_fallback_llm(self):
+        """Lazy load Fallback LLM"""
+        if self._models['fallback_llm'] is None:
+            print("Loading Fallback LLM...")
+            print(f"Loading Fallback LLM: {settings.FALLBACK_LLM_MODEL}...")
+            self._models['fallback_llm'] = ChatOpenAI(
+                model=settings.FALLBACK_LLM_MODEL,
+                openai_api_key=settings.FALLBACK_LLM_API_KEY,
+                openai_api_base=settings.FALLBACK_LLM_BASE_URL,
+                max_tokens=settings.LLM_MAX_TOKENS,
+                temperature=settings.LLM_TEMPERATURE
+            )
+        return self._models['fallback_llm']
     
     def get_image_embedding(self, image: Image.Image) -> np.ndarray:
         """Generate image embedding using CLIP model"""
@@ -130,6 +145,7 @@ class ModelManager:
         self.get_text_vector_store()
         self.get_image_metadata()
         self.get_llm()
+        self.get_fallback_llm()
     
     def clear_models(self):
         """Clear all loaded models to free memory"""

@@ -255,8 +255,20 @@ async def chat(
     chat_history = memory.load_memory_variables({})["chat_history"]
     inputs = {"chat_history": chat_history, "user_query": user_query, "context": context}
     print(inputs)
-    response = chain.invoke(inputs)
-    bot_response = response.content
+    try:
+        response = chain.invoke(inputs)
+        bot_response = response.content
+    except Exception as e:
+        print(f"Primary LLM failed: {e}. Trying fallback.")
+        try:
+            fallback_llm = model_manager.get_fallback_llm()
+            fallback_chain = RunnableSequence(prompt | fallback_llm)
+            response = fallback_chain.invoke(inputs)
+            bot_response = response.content
+        except Exception as fallback_e:
+            print(f"Fallback LLM also failed: {fallback_e}")
+            bot_response = "দুঃখিত, এই মুহূর্তে আমি আপনার অনুরোধটি প্রক্রিয়া করতে পারছি না। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।"
+
     print("Raw bot response:", bot_response)
 
     # Increment message count in database
