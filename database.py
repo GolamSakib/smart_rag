@@ -35,6 +35,20 @@ TABLES['product_images'] = (
     "  FOREIGN KEY (`image_id`) REFERENCES `images` (`id`) ON DELETE CASCADE"
     ") ENGINE=InnoDB")
 
+TABLES['users'] = (
+    "CREATE TABLE `users` ("
+    "  `id` int(11) NOT NULL AUTO_INCREMENT,"
+    "  `name` varchar(255) NOT NULL,"
+    "  `email` varchar(255) NOT NULL UNIQUE,"
+    "  `phone` varchar(20),"
+    "  `password` varchar(255) NOT NULL,"
+    "  `user_type` varchar(50) DEFAULT 'user',"
+    "  `is_active` boolean DEFAULT TRUE,"
+    "  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
+    "  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
+    "  PRIMARY KEY (`id`)"
+    ") ENGINE=InnoDB")
+
 def create_database(cursor):
     try:
         cursor.execute(

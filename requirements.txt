@@ -1,20 +1,22 @@
-  fastapi
-  uvicorn[standard]
-  faiss-cpu
-  transformers
-  torch
-  Pillow
-  langchain
-  langchain-community
-  langchain-openai
-  openai
-  mysql-connector-python
-  python-dotenv
-  httpx
-  requests
-  pydantic
-  gspread
-  google-auth-oauthlib
-  google-api-python-client
-  google-generativeai
-  langchain-google-genai
+fastapi
+uvicorn[standard]
+faiss-cpu
+transformers
+torch
+Pillow
+langchain
+langchain-community
+langchain-openai
+openai
+mysql-connector-python
+python-dotenv
+httpx
+requests
+pydantic
+gspread
+google-auth-oauthlib
+google-api-python-client
+google-generativeai
+langchain-google-genai
+bcrypt
+itsdangerous

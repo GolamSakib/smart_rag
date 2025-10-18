@@ -1,0 +1,117 @@
+body {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    background: #343a40;
+    color: #fff;
+    transition: all 0.3s;
+}
+
+.sidebar .sidebar-header {
+    padding: 20px;
+    background: #23272b;
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.sidebar ul.components {
+    padding: 20px 0;
+    border-bottom: 1px solid #47748b;
+}
+
+.sidebar ul li a {
+    padding: 15px 20px;
+    font-size: 1.1em;
+    display: block;
+    color: #adb5bd;
+    text-decoration: none;
+}
+
+.sidebar ul li a:hover {
+    color: #fff;
+    background: #495057;
+}
+
+.sidebar ul li.active>a,
+a[aria-expanded="true"] {
+    color: #fff;
+    background: #007bff;
+}
+
+#content {
+    width: 100%;
+    padding: 20px;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+.content-section {
+    display: none;
+}
+
+.content-section.active {
+    display: block;
+}
+
+.image-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.image-item {
+    position: relative;
+}
+
+.image-item img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 5px;
+}
+
+.image-item.selected img {
+    border: 8px solid yellow;
+}
+
+.image-item .delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: none;
+    background: rgba(255, 0, 0, 0.7);
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    text-align: center;
+}
+
+.image-item:hover .delete-btn {
+    display: block;
+}
+
+.image-options {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+.image-options .form-check-label {
+    font-size: 0.8rem;
+}
+
+.modal-body {
+    max-height: 75vh;
+    overflow-y: auto;
+}

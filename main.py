@@ -1,10 +1,11 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from config.settings import settings
-from routes import chat_routes, product_routes, image_routes
+from routes import chat_routes, product_routes, image_routes, login_routes
 from services.database_service import db_service
 
 # Create FastAPI app with minimal startup overhead
@@ -24,13 +25,21 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(login_routes.router, tags=["Login"])
 app.include_router(chat_routes.router, tags=["Chat"])
 app.include_router(product_routes.router, tags=["Products"])
 app.include_router(image_routes.router, tags=["Images"])
 
 # Static files
 app.mount("/product-image", StaticFiles(directory=settings.PRODUCT_IMAGES_PATH), name="product-image")
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    if "session" not in request.cookies:
+        return RedirectResponse(url="/login")
+    with open("index.html", "r") as f:
+        return HTMLResponse(content=f.read())
 
 
 @app.on_event("startup")
@@ -54,11 +63,6 @@ async def shutdown_event():
     from services.model_manager import model_manager
     model_manager.clear_models()
     print("✓ Cleanup complete")
-
-
-@app.get("/")
-async def root():
-    return {"message": "Smart RAG API is running", "status": "healthy"}
 
 
 @app.get("/health")
@@ -86,4 +90,4 @@ if __name__ == "__main__":
         port=settings.PORT,
         reload=True,
         log_level="info"
-    ) 
+    )
