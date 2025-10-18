@@ -400,10 +400,21 @@
             paginationUl.innerHTML = '';
             const totalPages = Math.ceil(total / PAGE_SIZE);
             if (totalPages <= 1) return;
+
             for (let i = 1; i <= totalPages; i++) {
                 const li = document.createElement('li');
                 li.className = `page-item ${i === currentPage ? 'active' : ''}`;
-                li.innerHTML = `<a class="page-link" href="#" onclick="loadProducts(${i})">${i}</a>`;
+                
+                const link = document.createElement('a');
+                link.className = 'page-link';
+                link.href = '#';
+                link.innerText = i;
+                link.onclick = (event) => {
+                    event.preventDefault();
+                    loadProducts(i);
+                };
+
+                li.appendChild(link);
                 paginationUl.appendChild(li);
             }
         }
