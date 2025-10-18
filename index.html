@@ -366,7 +366,7 @@
                     tableBody.appendChild(row);
                 });
                 renderPagination(data.total);
-            } catch (error) { alert('Error loading products.'); }
+            } catch (error) { alert(`Error loading products.${error}`); }
         }
         
         function renderPagination(total) {
