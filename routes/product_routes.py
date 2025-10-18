@@ -104,6 +104,7 @@ def get_products(
             
             product_ids = [p['id'] for p in products]
             images_dict = defaultdict(list)
+            
 
             if product_ids:
                 placeholders = ', '.join(['%s'] * len(product_ids))
