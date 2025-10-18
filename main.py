@@ -3,10 +3,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import os
+from pathlib import Path
 
 from config.settings import settings
 from routes import chat_routes, product_routes, image_routes, login_routes
 from services.database_service import db_service
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # Create FastAPI app with minimal startup overhead
 app = FastAPI(
@@ -32,13 +36,13 @@ app.include_router(image_routes.router, tags=["Images"])
 
 # Static files
 app.mount("/product-image", StaticFiles(directory=settings.PRODUCT_IMAGES_PATH), name="product-image")
-app.mount("/static", StaticFiles(directory="."), name="static")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR)), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     if "session" not in request.cookies:
         return RedirectResponse(url="/login")
-    return FileResponse("index.html")
+    return FileResponse(str(BASE_DIR / "index.html"))
 
 
 @app.on_event("startup")

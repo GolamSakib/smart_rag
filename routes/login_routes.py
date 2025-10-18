@@ -3,8 +3,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse,JSONResponse, FileR
 from itsdangerous import URLSafeTimedSerializer
 import bcrypt
 from services.database_service import db_service
+from pathlib import Path
 
 router = APIRouter()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Secret key for session management
 SECRET_KEY = "your-secret-key"
@@ -12,7 +15,7 @@ serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page():
-    return FileResponse("login.html")
+    return FileResponse(str(BASE_DIR / "login.html"))
 
 @router.post("/login")
 async def login(email: str = Form(...), password: str = Form(...)):
@@ -37,7 +40,7 @@ async def logout():
 
 @router.get("/signup", response_class=HTMLResponse)
 async def signup_page():
-    return FileResponse("signup.html")
+    return FileResponse(str(BASE_DIR / "signup.html"))
 
 @router.post("/signup")
 async def signup(name: str = Form(...), email: str = Form(...), phone: str = Form(None), password: str = Form(...)):
