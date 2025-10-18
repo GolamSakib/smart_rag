@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -38,8 +38,7 @@ app.mount("/static", StaticFiles(directory="."), name="static")
 async def root(request: Request):
     if "session" not in request.cookies:
         return RedirectResponse(url="/login")
-    with open("index.html", "r") as f:
-        return HTMLResponse(content=f.read())
+    return FileResponse("index.html")
 
 
 @app.on_event("startup")

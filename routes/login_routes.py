@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse,JSONResponse  
+from fastapi.responses import HTMLResponse, RedirectResponse,JSONResponse, FileResponse 
 from itsdangerous import URLSafeTimedSerializer
 import bcrypt
 from services.database_service import db_service
@@ -12,8 +12,7 @@ serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_page():
-    with open("login.html", "r") as f:
-        return HTMLResponse(content=f.read())
+    return FileResponse("login.html")
 
 @router.post("/login")
 async def login(email: str = Form(...), password: str = Form(...)):
@@ -38,8 +37,7 @@ async def logout():
 
 @router.get("/signup", response_class=HTMLResponse)
 async def signup_page():
-    with open("signup.html", "r") as f:
-        return HTMLResponse(content=f.read())
+    return FileResponse("signup.html")
 
 @router.post("/signup")
 async def signup(name: str = Form(...), email: str = Form(...), phone: str = Form(None), password: str = Form(...)):
