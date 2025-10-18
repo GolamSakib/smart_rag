@@ -72,6 +72,8 @@ def get_products(
     page: int = 1,
     page_size: int = 10
 ):
+    print("--- Entering get_products ---")
+    print(f"DEBUG: Received request for page: {page}, page_size: {page_size}")
     try:
         with db_service.get_cursor(dictionary=True) as (cursor, conn):
             filter_conditions = ""
@@ -96,15 +98,16 @@ def get_products(
             count_query = f"SELECT COUNT(id) as total FROM products p WHERE 1=1 {filter_conditions}"
             cursor.execute(count_query, tuple(params))
             total_count = cursor.fetchone()['total']
+            print(f"DEBUG: Total products matching filter: {total_count}")
 
             offset = (page - 1) * page_size
             product_query = f"SELECT * FROM products p WHERE 1=1 {filter_conditions} ORDER BY id DESC LIMIT %s OFFSET %s"
             cursor.execute(product_query, tuple(params + [page_size, offset]))
             products = cursor.fetchall()
+            print(f"DEBUG: Fetched {len(products)} products for this page.")
             
             product_ids = [p['id'] for p in products]
             images_dict = defaultdict(list)
-            
 
             if product_ids:
                 placeholders = ', '.join(['%s'] * len(product_ids))
@@ -121,8 +124,12 @@ def get_products(
             for product in products:
                 product['images'] = images_dict.get(product['id'], [])
             
-            return {"products": products, "total": total_count}
+            response_data = {"products": products, "total": total_count}
+            print(f"DEBUG: Returning {len(products)} products and total_count {total_count}.")
+            print("--- Exiting get_products ---")
+            return response_data
     except Exception as e:
+        print(f"ERROR in get_products: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 

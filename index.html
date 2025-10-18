@@ -380,7 +380,7 @@
                             <td>${product.price}</td>
                             <td>${product.marginal_price}</td>
                             <td>${product.code}</td>
-                            <td>${(product.images || []).map(img => `<img src="${img}" width="50" class="img-thumbnail">`).join(' ')}</td>
+                            <td>${(product.images || []).map(img => `<img src="${img.image_path}" width="50" class="img-thumbnail">`).join(' ')}</td>
                             <td>
                                 <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#productModal" onclick='prepareProductModal(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
                                 <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
