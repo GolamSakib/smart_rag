@@ -339,10 +339,16 @@
         async function loadProducts(page = 1) {
             currentPage = page;
             const params = new URLSearchParams({ page: currentPage, page_size: PAGE_SIZE });
-            // Add filters to params
+            
             const name = document.getElementById('filterName').value;
+            const code = document.getElementById('filterCode').value;
+            const minPrice = document.getElementById('filterMinPrice').value;
+            const maxPrice = document.getElementById('filterMaxPrice').value;
+
             if (name) params.append('name', name);
-            // ... other filters
+            if (code) params.append('code', code);
+            if (minPrice) params.append('min_price', minPrice);
+            if (maxPrice) params.append('max_price', maxPrice);
 
             try {
                 const response = await fetch(`${API_URL}/api/products?${params.toString()}`);
@@ -350,23 +356,43 @@
                 const tableBody = document.getElementById('productTableBody');
                 tableBody.innerHTML = '';
 
-                data.products.forEach(product => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${product.name}</td>
-                        <td>${product.description.substring(0, 50)}...</td>
-                        <td>${product.price}</td>
-                        <td>${product.marginal_price}</td>
-                        <td>${product.code}</td>
-                        <td>${product.images.map(img => `<img src="${img.image_path}" width="50" class="img-thumbnail">`).join(' ')}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#productModal" onclick='prepareProductModal(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
-                        </td>`;
-                    tableBody.appendChild(row);
-                });
-                renderPagination(data.total);
-            } catch (error) { alert(`Error loading products.${error}`); }
+                let products = [];
+                let total = 0;
+
+                // Defensive check for API response format
+                if (data && data.products) {
+                    // New format: { products: [...], total: ... }
+                    products = data.products;
+                    total = data.total;
+                } else if (Array.isArray(data)) {
+                    // Fallback for old format: [...]
+                    console.warn('Warning: API is returning data in an outdated format. Pagination may not work.');
+                    products = data;
+                    total = data.length;
+                }
+
+                if (products) {
+                    products.forEach(product => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${product.name}</td>
+                            <td>${product.description ? product.description.substring(0, 50) : ''}...</td>
+                            <td>${product.price}</td>
+                            <td>${product.marginal_price}</td>
+                            <td>${product.code}</td>
+                            <td>${(product.images || []).map(img => `<img src="${img.image_path}" width="50" class="img-thumbnail">`).join(' ')}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#productModal" onclick='prepareProductModal(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
+                            </td>`;
+                        tableBody.appendChild(row);
+                    });
+                }
+                renderPagination(total);
+            } catch (error) {
+                console.error("Error loading products:", error);
+                alert('Error loading products. Check the console for details.');
+            }
         }
         
         function renderPagination(total) {
