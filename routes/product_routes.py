@@ -1,14 +1,22 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
 from typing import Optional, List
 from pydantic import BaseModel
 import subprocess
 import decimal
+from collections import defaultdict
 
 from services.database_service import db_service
 from config.settings import settings
 
 router = APIRouter()
+
+
+class ProductImageInfo(BaseModel):
+    image_id: int
+    is_catalogue_image: bool = False
+    is_variant_image: bool = False
+    is_real_image: bool = False
+    is_size_related_image: bool = False
 
 
 class Product(BaseModel):
@@ -17,7 +25,7 @@ class Product(BaseModel):
     price: float
     code: str
     marginal_price: float
-    image_ids: List[int]
+    images: List[ProductImageInfo]
     link: Optional[str] = None
 
 
@@ -26,19 +34,29 @@ def create_product(product: Product):
     try:
         with db_service.get_cursor() as (cursor, conn):
             add_product = ("INSERT INTO products "
-                          "(name, description, price, code, marginal_price, link) "
-                          "VALUES (%s, %s, %s, %s, %s, %s)")
+                           "(name, description, price, code, marginal_price, link) "
+                           "VALUES (%s, %s, %s, %s, %s, %s)")
             data_product = (product.name, product.description, product.price, product.code, product.marginal_price, product.link)
             cursor.execute(add_product, data_product)
-            conn.commit()
             product_id = cursor.lastrowid
 
-            if product.image_ids:
-                add_product_image = ("INSERT INTO product_images (product_id, image_id) VALUES (%s, %s)")
-                for image_id in product.image_ids:
-                    cursor.execute(add_product_image, (product_id, image_id))
-                conn.commit()
-
+            if product.images:
+                add_product_image = ("INSERT INTO product_images "
+                                     "(product_id, image_id, is_catalogue_image, is_variant_image, is_real_image, is_size_related_image) "
+                                     "VALUES (%s, %s, %s, %s, %s, %s)")
+                image_data = []
+                for image_info in product.images:
+                    image_data.append((
+                        product_id,
+                        image_info.image_id,
+                        image_info.is_catalogue_image,
+                        image_info.is_variant_image,
+                        image_info.is_real_image,
+                        image_info.is_size_related_image
+                    ))
+                cursor.executemany(add_product_image, image_data)
+            
+            conn.commit()
             return {"id": product_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -50,57 +68,59 @@ def get_products(
     code: Optional[str] = None, 
     min_price: Optional[str] = None, 
     max_price: Optional[str] = None,
-    link: Optional[str] = None
+    link: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 10
 ):
     try:
         with db_service.get_cursor(dictionary=True) as (cursor, conn):
-            query = ("SELECT p.*, GROUP_CONCAT(i.id) as image_ids, GROUP_CONCAT(i.image_path) as images "
-                    "FROM products p "
-                    "LEFT JOIN product_images pi ON p.id = pi.product_id "
-                    "LEFT JOIN images i ON pi.image_id = i.id "
-                    "WHERE 1=1")
+            filter_conditions = ""
             params = []
 
             if name:
-                query += " AND p.name LIKE %s"
+                filter_conditions += " AND p.name LIKE %s"
                 params.append(f"%{name}%")
             if code:
-                query += " AND p.code = %s"
+                filter_conditions += " AND p.code = %s"
                 params.append(code)
             if link:
-                query += " AND p.link = %s"
+                filter_conditions += " AND p.link = %s"
                 params.append(link)
-            
             if min_price:
-                try:
-                    min_price_float = float(min_price)
-                    query += " AND p.price >= %s"
-                    params.append(min_price_float)
-                except (ValueError, TypeError):
-                    pass
-                    
+                filter_conditions += " AND p.price >= %s"
+                params.append(float(min_price))
             if max_price:
-                try:
-                    max_price_float = float(max_price)
-                    query += " AND p.price <= %s"
-                    params.append(max_price_float)
-                except (ValueError, TypeError):
-                    pass
+                filter_conditions += " AND p.price <= %s"
+                params.append(float(max_price))
 
-            query += " GROUP BY p.id ORDER BY p.id DESC"
-            
-            cursor.execute(query, tuple(params))
+            count_query = f"SELECT COUNT(id) as total FROM products p WHERE 1=1 {filter_conditions}"
+            cursor.execute(count_query, tuple(params))
+            total_count = cursor.fetchone()['total']
+
+            offset = (page - 1) * page_size
+            product_query = f"SELECT * FROM products p WHERE 1=1 {filter_conditions} ORDER BY id DESC LIMIT %s OFFSET %s"
+            cursor.execute(product_query, tuple(params + [page_size, offset]))
             products = cursor.fetchall()
             
+            product_ids = [p['id'] for p in products]
+            images_dict = defaultdict(list)
+
+            if product_ids:
+                placeholders = ', '.join(['%s'] * len(product_ids))
+                image_query = (f"SELECT pi.product_id, pi.image_id, i.image_path, "
+                               f"pi.is_catalogue_image, pi.is_variant_image, pi.is_real_image, pi.is_size_related_image "
+                               f"FROM product_images pi "
+                               f"JOIN images i ON pi.image_id = i.id "
+                               f"WHERE pi.product_id IN ({placeholders})")
+                cursor.execute(image_query, tuple(product_ids))
+                images = cursor.fetchall()
+                for image in images:
+                    images_dict[image['product_id']].append(image)
+
             for product in products:
-                if product['images']:
-                    product['images'] = product['images'].split(',')
-                    product['image_ids'] = [int(id) for id in product['image_ids'].split(',')]
-                else:
-                    product['images'] = []
-                    product['image_ids'] = []
-                    
-            return products
+                product['images'] = images_dict.get(product['id'], [])
+            
+            return {"products": products, "total": total_count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
@@ -114,10 +134,22 @@ def update_product(product_id: int, product: Product):
             cursor.execute(update_prod, data_prod)
 
             cursor.execute("DELETE FROM product_images WHERE product_id = %s", (product_id,))
-            if product.image_ids:
-                add_product_image = ("INSERT INTO product_images (product_id, image_id) VALUES (%s, %s)")
-                for image_id in product.image_ids:
-                    cursor.execute(add_product_image, (product_id, image_id))
+            
+            if product.images:
+                add_product_image = ("INSERT INTO product_images "
+                                     "(product_id, image_id, is_catalogue_image, is_variant_image, is_real_image, is_size_related_image) "
+                                     "VALUES (%s, %s, %s, %s, %s, %s)")
+                image_data = []
+                for image_info in product.images:
+                    image_data.append((
+                        product_id,
+                        image_info.image_id,
+                        image_info.is_catalogue_image,
+                        image_info.is_variant_image,
+                        image_info.is_real_image,
+                        image_info.is_size_related_image
+                    ))
+                cursor.executemany(add_product_image, image_data)
             
             conn.commit()
             return {"message": "Product updated successfully"}
@@ -140,7 +172,7 @@ def delete_product(product_id: int):
 def generate_json():
     try:
         with db_service.get_cursor(dictionary=True) as (cursor, conn):
-            cursor.execute("SELECT p.*, i.image_path FROM products p JOIN product_images pi ON p.id = pi.product_id JOIN images i ON pi.image_id = i.id")
+            cursor.execute("SELECT p.*, i.image_path, pi.is_catalogue_image, pi.is_variant_image, pi.is_real_image, pi.is_size_related_image FROM products p JOIN product_images pi ON p.id = pi.product_id JOIN images i ON pi.image_id = i.id")
             products = cursor.fetchall()
 
         for product in products:
@@ -169,4 +201,4 @@ def train_model():
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"Training failed: {e.stderr}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")

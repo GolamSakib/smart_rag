@@ -63,4 +63,4 @@ embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-small")
 vector_store = FAISS.from_documents(documents, embeddings)
 vector_store.save_local('vector_stores/text_faiss')
 
-print("Training complete. FAISS indexes and metadata have been created.")
+print("Training complete.")

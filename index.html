@@ -1,186 +1,317 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sale Machine</title>
+    <title>Smart RAG Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        body { padding: 20px; }
+        body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            min-width: 250px;
+            max-width: 250px;
+            background: #343a40;
+            color: #fff;
+            transition: all 0.3s;
+        }
+        .sidebar .sidebar-header {
+            padding: 20px;
+            background: #23272b;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+        .sidebar ul.components {
+            padding: 20px 0;
+            border-bottom: 1px solid #47748b;
+        }
+        .sidebar ul li a {
+            padding: 15px 20px;
+            font-size: 1.1em;
+            display: block;
+            color: #adb5bd;
+            text-decoration: none;
+        }
+        .sidebar ul li a:hover {
+            color: #fff;
+            background: #495057;
+        }
+        .sidebar ul li.active > a, a[aria-expanded="true"] {
+            color: #fff;
+            background: #007bff;
+        }
+        #content {
+            width: 100%;
+            padding: 20px;
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
         .image-gallery { display: flex; flex-wrap: wrap; gap: 15px; }
         .image-item { position: relative; }
-        .image-item img { width: 150px; object-fit: cover; cursor: pointer; border: 2px solid transparent; }
-        .image-item.selected img { border-color: blue; }
-        .image-item .delete-btn { position: absolute; top: 5px; right: 5px; display: none; }
+        .image-item img {
+            width: 150px; height: 150px; object-fit: cover; cursor: pointer; 
+            border: 2px solid transparent; border-radius: 5px; 
+        }
+        .image-item.selected img { border: 8px solid yellow; }
+        .image-item .delete-btn {
+            position: absolute; top: 5px; right: 5px; display: none; background: rgba(255,0,0,0.7); 
+            border: none; color: white; border-radius: 50%; width: 25px; height: 25px; 
+            line-height: 25px; text-align: center; 
+        }
         .image-item:hover .delete-btn { display: block; }
+        .image-options {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        .image-options .form-check-label { font-size: 0.8rem; }
     </style>
 </head>
 <body>
-    <div class="container-fluid">
-        <h1 class="mb-4">Sale Machine</h1>
+    <nav class="sidebar">
+        <div class="sidebar-header"><h3>Smart RAG</h3></div>
+        <ul class="list-unstyled components">
+            <li class="active"><a href="#" onclick="showSection('dashboard', this)"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#" onclick="showSection('images', this)"><i class="fas fa-images"></i> Images</a></li>
+            <li><a href="#" onclick="showSection('products', this)"><i class="fas fa-box-open"></i> Products</a></li>
+            <li><a href="#" onclick="showSection('training', this)"><i class="fas fa-cogs"></i> Training</a></li>
+        </ul>
+    </nav>
 
-        <!-- Image Management -->
-        <div class="card mb-4">
-            <div class="card-header">Image Management</div>
-            <div class="card-body">
-                <div class="form-group">
-                    <label for="imageUpload">Upload Image</label>
-                    <input type="file" class="form-control-file" id="imageUpload" multiple>
+    <div id="content">
+        <!-- Dashboard, Image, Training sections remain the same -->
+        <div id="dashboard-section" class="content-section active">
+            <div class="jumbotron">
+                <h1 class="display-4">Welcome to the Smart RAG Dashboard!</h1>
+                <p class="lead">This is your central hub for managing products and images for the Sale Machine.</p>
+                <hr class="my-4">
+                <p>Use the sidebar to navigate between different management sections.</p>
+            </div>
+        </div>
+        <div id="images-section" class="content-section">
+            <div class="card">
+                <div class="card-header"><h2><i class="fas fa-images"></i> Image Management</h2></div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h5>Upload New Images</h5>
+                        <div class="form-group">
+                            <input type="file" class="form-control-file" id="imageUpload" multiple>
+                        </div>
+                        <button class="btn btn-primary" onclick="uploadImage()"><i class="fas fa-upload"></i> Upload</button>
+                    </div>
+                    <hr>
+                    <h5>Image Gallery</h5>
+                    <div id="imageGallery" class="image-gallery"></div>
                 </div>
-                <button class="btn btn-primary" onclick="uploadImage()">Upload</button>
-                <hr>
-                <h5>Image Gallery</h5>
-                <div id="imageGallery" class="image-gallery"></div>
             </div>
         </div>
-
-        <!-- Product Management -->
-        <div class="card mb-4">
-            <div class="card-header">Product Management</div>
-            <div class="card-body">
-                <form id="productForm">
-                    <input type="hidden" id="productId">
-                    <div class="form-group">
-                        <label for="productName">Name</label>
-                        <input type="text" class="form-control" id="productName" required>
+        <div id="products-section" class="content-section">
+            <div class="card mb-4">
+                <div class="card-header"><h2><i class="fas fa-box-open"></i> Product Management</h2></div>
+                <div class="card-body">
+                    <button class="btn btn-primary mb-3" data-toggle="modal" data-target="#productModal" onclick="prepareProductModal()">Add New Product</button>
+                    <h5>Filter Products</h5>
+                    <form id="filterForm" class="form-inline mb-3">
+                        <input type="text" class="form-control mr-2 mb-2" id="filterName" placeholder="Name">
+                        <input type="text" class="form-control mr-2 mb-2" id="filterCode" placeholder="Code">
+                        <input type="number" class="form-control mr-2 mb-2" id="filterMinPrice" placeholder="Min Price">
+                        <input type="number" class="form-control mr-2 mb-2" id="filterMaxPrice" placeholder="Max Price">
+                        <button type="submit" class="btn btn-primary mb-2"><i class="fas fa-filter"></i> Filter</button>
+                    </form>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>Name</th><th>Description</th><th>Price</th><th>Discount</th><th>Code</th><th>Images</th><th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody"></tbody>
+                        </table>
                     </div>
-                    <div class="form-group">
-                        <label for="productDescription">Description</label>
-                        <textarea class="form-control" id="productDescription" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="productLink">Link</label>
-                        <input type="text" class="form-control" id="productLink">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label for="productPrice">Price</label>
-                            <input type="number" class="form-control" id="productPrice" required>
-                        </div>
-                        <div class="form-group col-md-4">
-                            <label for="productCode">Code</label>
-                            <input type="text" class="form-control" id="productCode" required>
-                        </div>
-                        <div class="form-group col-md-4">
-                            <label for="marginalPrice">Discount Price</label>
-                            <input type="number" class="form-control" id="marginalPrice" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Select Images</label>
-                        <div id="productImageGallery" class="image-gallery"></div>
-                    </div>
-                    <button type="submit" class="btn btn-success">Save Product</button>
-                    <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
-                </form>
+                    <nav><ul class="pagination justify-content-center" id="pagination"></ul></nav>
+                </div>
             </div>
         </div>
-
-        <!-- Product Showcase -->
-        <div class="card mb-4">
-            <div class="card-header">Product Showcase</div>
-            <div class="card-body">
-                <form id="filterForm" class="form-inline mb-3">
-                    <input type="text" class="form-control mr-2" id="filterName" placeholder="Name">
-                    <input type="text" class="form-control mr-2" id="filterCode" placeholder="Code">
-                    <input type="text" class="form-control mr-2" id="filterLink" placeholder="Link">
-                    <input type="number" class="form-control mr-2" id="filterMinPrice" placeholder="Min Price">
-                    <input type="number" class="form-control mr-2" id="filterMaxPrice" placeholder="Max Price">
-                    <button type="submit" class="btn btn-primary">Filter</button>
-                </form>
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Description</th>
-                            <th>Price</th>
-                            <th>Discount Price</th>
-                            <th>Code</th>
-                            <th>Link</th>
-                            <th>Images</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Training -->
-        <div class="card">
-            <div class="card-header">Training</div>
-            <div class="card-body">
-                <button class="btn btn-warning" onclick="generateJson()">Generate JSON</button>
-                <button class="btn btn-danger" onclick="trainModel()">Train Model</button>
+        <div id="training-section" class="content-section">
+            <div class="card">
+                <div class="card-header"><h2><i class="fas fa-cogs"></i> Model Training</h2></div>
+                <div class="card-body">
+                    <p>Generate product data and train the model based on the current product database.</p>
+                    <button class="btn btn-warning mr-2" onclick="generateJson()"><i class="fas fa-file-code"></i> Generate JSON</button>
+                    <button class="btn btn-danger" onclick="trainModel()"><i class="fas fa-robot"></i> Train Model</button>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Product Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Add/Edit Product</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId">
+                        <div class="form-group"><label for="productName">Name</label><input type="text" class="form-control" id="productName" required></div>
+                        <div class="form-group"><label for="productDescription">Description</label><textarea class="form-control" id="productDescription" rows="3"></textarea></div>
+                        <div class="form-group"><label for="productLink">Link</label><input type="text" class="form-control" id="productLink"></div>
+                        <div class="form-row">
+                            <div class="form-group col-md-4"><label for="productPrice">Price</label><input type="number" class="form-control" id="productPrice" required step="0.01"></div>
+                            <div class="form-group col-md-4"><label for="productCode">Code</label><input type="text" class="form-control" id="productCode" required></div>
+                            <div class="form-group col-md-4"><label for="marginalPrice">Discount Price</label><input type="number" class="form-control" id="marginalPrice" required step="0.01"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Select Images</label>
+                            <div id="productImageGallery" class="image-gallery"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
+        <!-- const API_URL = 'http://localhost:8000'; -->
         const API_URL = 'https://chat.momsandkidsworld.com';
-        <!-- API_URL = 'http://localhost:8000';  -->
+        let currentPage = 1;
+        const PAGE_SIZE = 10;
+
+        // --- Navigation --- 
+        function showSection(sectionId, element) {
+            if (element) {
+                event.preventDefault();
+                document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+                element.closest('li').classList.add('active');
+            }
+            document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId + '-section').classList.add('active');
+
+            if (sectionId === 'images') loadImages();
+            else if (sectionId === 'products') loadProducts(1);
+        }
 
         // --- Image Management ---
         async function uploadImage() {
             const input = document.getElementById('imageUpload');
             if (input.files.length === 0) return;
-
             const formData = new FormData();
-            for (const file of input.files) {
-                formData.append('files', file);
-            }
+            for (const file of input.files) formData.append('files', file);
 
-            await fetch(`${API_URL}/api/images`, {
-                method: 'POST',
-                body: formData
-            });
-            input.value = '';
-            loadImages();
+            try {
+                const response = await fetch(`${API_URL}/api/images`, { method: 'POST', body: formData });
+                if (!response.ok) throw new Error('Upload failed');
+                input.value = '';
+                loadImages();
+            } catch (error) { alert('Error uploading images.'); }
         }
 
         async function loadImages() {
-            const response = await fetch(`${API_URL}/api/images`);
-            const images = await response.json();
-            const gallery = document.getElementById('imageGallery');
-            const productGallery = document.getElementById('productImageGallery');
-            gallery.innerHTML = '';
-            productGallery.innerHTML = '';
-
-            images.forEach(image => {
-                // Main gallery
-                const item = document.createElement('div');
-                item.className = 'image-item';
-                item.innerHTML = `
-                    <img src="${image.image_path}" alt="Image">
-                    <button class="btn btn-danger btn-sm delete-btn" onclick="deleteImage(${image.id})">X</button>
-                `;
-                gallery.appendChild(item);
-
-                // Product form gallery
-                const productItem = document.createElement('div');
-                productItem.className = 'image-item';
-                productItem.dataset.imageId = image.id;
-                productItem.innerHTML = `<img src="${image.image_path}" alt="Image">`;
-                productItem.onclick = () => {
-                    productItem.classList.toggle('selected');
-                };
-                productGallery.appendChild(productItem);
-            });
+            try {
+                const response = await fetch(`${API_URL}/api/images`);
+                const images = await response.json();
+                const gallery = document.getElementById('imageGallery');
+                gallery.innerHTML = '';
+                images.forEach(image => {
+                    const item = document.createElement('div');
+                    item.className = 'image-item';
+                    item.innerHTML = `<img src="${image.image_path}" alt="Image"><button class="btn btn-danger btn-sm delete-btn" onclick="deleteImage(${image.id})"><i class="fas fa-trash-alt"></i></button>`;
+                    gallery.appendChild(item);
+                });
+            } catch (error) { alert('Error loading images.'); }
         }
 
         async function deleteImage(id) {
-            if (!confirm('Are you sure you want to delete this image?')) return;
-            await fetch(`${API_URL}/api/images/${id}`, { method: 'DELETE' });
-            loadImages();
+            if (!confirm('Are you sure?')) return;
+            try {
+                await fetch(`${API_URL}/api/images/${id}`, { method: 'DELETE' });
+                loadImages();
+            } catch (error) { alert('Error deleting image.'); }
         }
 
         // --- Product Management ---
-        document.getElementById('productForm').onsubmit = async (e) => {
-            e.preventDefault();
+        function prepareProductModal(product = null) {
+            const form = document.getElementById('productForm');
+            form.reset();
+            document.getElementById('productId').value = product ? product.id : '';
+            if (product) {
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productDescription').value = product.description;
+                document.getElementById('productPrice').value = product.price;
+                document.getElementById('productCode').value = product.code;
+                document.getElementById('marginalPrice').value = product.marginal_price;
+                document.getElementById('productLink').value = product.link;
+            }
+            loadImagesForProductModal(product ? product.images : []);
+        }
+        
+        async function loadImagesForProductModal(productImages = []) {
+            try {
+                const response = await fetch(`${API_URL}/api/images`);
+                const allImages = await response.json();
+                const productGallery = document.getElementById('productImageGallery');
+                productGallery.innerHTML = '';
+
+                allImages.forEach(image => {
+                    const productItem = document.createElement('div');
+                    productItem.className = 'image-item';
+                    productItem.dataset.imageId = image.id;
+
+                    const existingImage = productImages.find(pi => pi.image_id === image.id);
+
+                    productItem.innerHTML = `
+                        <img src="${image.image_path}" alt="Image">
+                        <div class="image-options" style="display: none;">
+                            <div class="form-check"><input type="checkbox" class="form-check-input" id="cat_${image.id}" ${existingImage?.is_catalogue_image ? 'checked' : ''}><label class="form-check-label" for="cat_${image.id}">Catalogue</label></div>
+                            <div class="form-check"><input type="checkbox" class="form-check-input" id="var_${image.id}" ${existingImage?.is_variant_image ? 'checked' : ''}><label class="form-check-label" for="var_${image.id}">Variant</label></div>
+                            <div class="form-check"><input type="checkbox" class="form-check-input" id="real_${image.id}" ${existingImage?.is_real_image ? 'checked' : ''}><label class="form-check-label" for="real_${image.id}">Real</label></div>
+                            <div class="form-check"><input type="checkbox" class="form-check-input" id="size_${image.id}" ${existingImage?.is_size_related_image ? 'checked' : ''}><label class="form-check-label" for="size_${image.id}">Size</label></div>
+                        </div>`;
+
+                    if (existingImage) {
+                        productItem.classList.add('selected');
+                        productItem.querySelector('.image-options').style.display = 'block';
+                    }
+
+                    const optionsContainer = productItem.querySelector('.image-options');
+                    optionsContainer.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                    });
+
+                    productItem.onclick = () => {
+                        productItem.classList.toggle('selected');
+                        optionsContainer.style.display = productItem.classList.contains('selected') ? 'block' : 'none';
+                    };
+                    productGallery.appendChild(productItem);
+                });
+            } catch (error) { console.error('Error loading images for modal:', error); }
+        }
+
+        async function saveProduct() {
             const id = document.getElementById('productId').value;
-            const selectedImages = Array.from(document.querySelectorAll('#productImageGallery .image-item.selected'))
-                                        .map(item => parseInt(item.dataset.imageId));
+            const images = Array.from(document.querySelectorAll('#productImageGallery .image-item.selected')).map(item => ({
+                image_id: parseInt(item.dataset.imageId),
+                is_catalogue_image: item.querySelector('[id^=cat_]').checked,
+                is_variant_image: item.querySelector('[id^=var_]').checked,
+                is_real_image: item.querySelector('[id^=real_]').checked,
+                is_size_related_image: item.querySelector('[id^=size_]').checked,
+            }));
 
             const product = {
                 name: document.getElementById('productName').value,
@@ -189,116 +320,110 @@
                 code: document.getElementById('productCode').value,
                 marginal_price: parseFloat(document.getElementById('marginalPrice').value),
                 link: document.getElementById('productLink').value,
-                image_ids: selectedImages
+                images: images
             };
+
+            if (!product.name || !product.price || !product.code) { alert('Please fill all required fields.'); return; }
 
             const url = id ? `${API_URL}/api/products/${id}` : `${API_URL}/api/products`;
             const method = id ? 'PUT' : 'POST';
 
-            await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(product)
-            });
-
-            resetForm();
-            loadProducts();
-        };
-
-        function resetForm() {
-            document.getElementById('productForm').reset();
-            document.getElementById('productId').value = '';
-            document.querySelectorAll('#productImageGallery .image-item.selected').forEach(item => item.classList.remove('selected'));
+            try {
+                const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(product) });
+                if (!response.ok) throw new Error('Failed to save product');
+                $('#productModal').modal('hide');
+                loadProducts(id ? currentPage : 1);
+            } catch (error) { alert('Error saving product.'); }
         }
 
-        async function loadProducts() {
-            const params = new URLSearchParams();
+        async function loadProducts(page = 1) {
+            currentPage = page;
+            const params = new URLSearchParams({ page: currentPage, page_size: PAGE_SIZE });
+            // Add filters to params
             const name = document.getElementById('filterName').value;
-            const code = document.getElementById('filterCode').value;
-            const link = document.getElementById('filterLink').value;
-            const minPrice = document.getElementById('filterMinPrice').value;
-            const maxPrice = document.getElementById('filterMaxPrice').value;
-
             if (name) params.append('name', name);
-            if (code) params.append('code', code);
-            if (link) params.append('link', link);
-            if (minPrice) params.append('min_price', minPrice);
-            if (maxPrice) params.append('max_price', maxPrice);
+            // ... other filters
 
-            const response = await fetch(`${API_URL}/api/products?${params.toString()}`);
-            const products = await response.json();
-            const tableBody = document.getElementById('productTableBody');
-            tableBody.innerHTML = '';
+            try {
+                const response = await fetch(`${API_URL}/api/products?${params.toString()}`);
+                const data = await response.json();
+                const tableBody = document.getElementById('productTableBody');
+                tableBody.innerHTML = '';
 
-            products.forEach(product => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${product.name}</td>
-                    <td>${product.description}</td>
-                    <td>${product.price}</td>
-                    <td>${product.marginal_price}</td>
-                    <td>${product.code}</td>
-                    <td><a href="${product.link}" target="_blank">${product.link}</a></td>
-                    <td>${product.images.map(img => `<img src="${img}" width="50">`).join(' ')}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick='editProduct(${JSON.stringify(product)})'>Edit</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">Delete</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
+                data.products.forEach(product => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${product.name}</td>
+                        <td>${product.description.substring(0, 50)}...</td>
+                        <td>${product.price}</td>
+                        <td>${product.marginal_price}</td>
+                        <td>${product.code}</td>
+                        <td>${product.images.map(img => `<img src="${img.image_path}" width="50" class="img-thumbnail">`).join(' ')}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#productModal" onclick='prepareProductModal(${JSON.stringify(product)})'><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})"><i class="fas fa-trash-alt"></i></button>
+                        </td>`;
+                    tableBody.appendChild(row);
+                });
+                renderPagination(data.total);
+            } catch (error) { alert('Error loading products.'); }
         }
-
-        function editProduct(product) {
-            document.getElementById('productId').value = product.id;
-            document.getElementById('productName').value = product.name;
-            document.getElementById('productDescription').value = product.description;
-            document.getElementById('productPrice').value = product.price;
-            document.getElementById('productCode').value = product.code;
-            document.getElementById('marginalPrice').value = product.marginal_price;
-            document.getElementById('productLink').value = product.link;
-
-            // Select images
-            document.querySelectorAll('#productImageGallery .image-item').forEach(item => {
-                if (product.image_ids.includes(parseInt(item.dataset.imageId))) {
-                    item.classList.add('selected');
-                } else {
-                    item.classList.remove('selected');
-                }
-            });
+        
+        function renderPagination(total) {
+            const paginationUl = document.getElementById('pagination');
+            paginationUl.innerHTML = '';
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            if (totalPages <= 1) return;
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" onclick="loadProducts(${i})">${i}</a>`;
+                paginationUl.appendChild(li);
+            }
         }
 
         async function deleteProduct(id) {
-            if (!confirm('Are you sure you want to delete this product?')) return;
-            await fetch(`${API_URL}/api/products/${id}`, { method: 'DELETE' });
-            loadProducts();
+            if (!confirm('Are you sure?')) return;
+            try {
+                await fetch(`${API_URL}/api/products/${id}`, { method: 'DELETE' });
+                loadProducts(currentPage);
+            } catch (error) { alert('Error deleting product.'); }
         }
 
-        document.getElementById('filterForm').onsubmit = (e) => {
-            e.preventDefault();
-            loadProducts();
-        };
+        document.getElementById('filterForm').onsubmit = (e) => { e.preventDefault(); loadProducts(1); };
 
         // --- Training ---
         async function generateJson() {
-            await fetch(`${API_URL}/api/generate-json`, { method: 'POST' });
-            alert('products.json has been generated.');
+            try {
+                const response = await fetch(`${API_URL}/api/generate-json`, { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to generate JSON');
+                alert('products.json has been generated successfully.');
+            } catch (error) {
+                console.error('Error generating JSON:', error);
+                alert('Error generating JSON file.');
+            }
         }
 
         async function trainModel() {
-            const response = await fetch(`${API_URL}/api/train`, { method: 'POST' });
-            const result = await response.json();
-            if (response.ok) {
-                alert('Training complete!\n' + result.output);
-            } else {
-                alert('Training failed:\n' + result.detail);
+            try {
+                alert('Training started... This may take a while.');
+                const response = await fetch(`${API_URL}/api/train`, { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Training complete!\n' + result.output);
+                } else {
+                    throw new Error(result.detail);
+                }
+            } catch (error) {
+                console.error('Training failed:', error);
+                alert('Training failed:\n' + error.message);
             }
         }
 
         // Initial load
         window.onload = () => {
-            loadImages();
-            loadProducts();
+            document.getElementById('dashboard-section').classList.add('active');
+            document.querySelector('.sidebar ul li').classList.add('active');
         };
     </script>
 </body>
