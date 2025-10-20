@@ -68,8 +68,8 @@ print("Training complete.")
 
 # --- Reload Models ---
 try:
-    response = requests.post("http://127.0.0.1:8000/api/reload-models")
-    # response = requests.post("https://chat.momsandkidsworld.com/api/reload-models")
+    # response = requests.post("http://127.0.0.1:8000/api/reload-models")
+    response = requests.post("https://chat.momsandkidsworld.com/api/reload-models")
     if response.status_code == 200:
         print("Models reloaded successfully.")
     else:

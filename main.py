@@ -41,7 +41,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     if "session" not in request.cookies:
-        return RedirectResponse(url="/login")
+        return RedirectResponse(url="/login.html")
     return FileResponse(str(BASE_DIR / "index.html"))
 
 
