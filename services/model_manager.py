@@ -129,6 +129,17 @@ class ModelManager:
             embedding = model.get_image_features(**inputs)
         return embedding.cpu().numpy().flatten()
     
+    def reload_vector_stores(self):
+        """Reloads the vector stores and metadata from disk."""
+        print("Reloading vector stores...")
+        self._models['image_index'] = None
+        self._models['text_vector_store'] = None
+        self._models['image_metadata'] = None
+        self.get_image_index()
+        self.get_text_vector_store()
+        self.get_image_metadata()
+        print("OK: Vector stores reloaded.")
+    
     def preload_essential_models(self):
         """Preload only essential models for basic functionality"""
         print("Preloading essential models...")

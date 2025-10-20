@@ -36,7 +36,7 @@ app.include_router(image_routes.router, tags=["Images"])
 
 # Static files
 app.mount("/product-image", StaticFiles(directory=settings.PRODUCT_IMAGES_PATH), name="product-image")
-app.mount("/static", StaticFiles(directory=str(BASE_DIR)), name="static")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -52,11 +52,11 @@ async def startup_event():
     
     # Test database connection
     if db_service.test_connection():
-        print("✓ Database connection successful")
+        print("OK: Database connection successful")
     else:
-        print("✗ Database connection failed")
+        print("FAIL: Database connection failed")
     
-    print("✓ API startup complete (models will load on-demand)")
+    print("OK: API startup complete (models will load on-demand)")
 
 
 @app.on_event("shutdown")
@@ -65,7 +65,7 @@ async def shutdown_event():
     print("Shutting down Smart RAG API...")
     from services.model_manager import model_manager
     model_manager.clear_models()
-    print("✓ Cleanup complete")
+    print("OK: Cleanup complete")
 
 
 @app.get("/health")

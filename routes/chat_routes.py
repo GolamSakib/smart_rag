@@ -29,6 +29,19 @@ processed_messages = set()
 router = APIRouter()
 
 
+@router.post("/api/reload-models")
+async def reload_models():
+    """
+    Reloads the vector stores and models from disk.
+    This is useful after running the training script to update the data.
+    """
+    try:
+        model_manager.reload_vector_stores()
+        return JSONResponse(content={"message": "Models reloaded successfully."})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to reload models: {str(e)}")
+
+
 # In-memory store for per-session memory
 session_memories = defaultdict(lambda: {
     "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),

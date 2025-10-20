@@ -8,6 +8,7 @@ import torch
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.docstore.document import Document
+import requests
 
 # Load product data
 with open('data/products.json', 'r') as f:
@@ -64,3 +65,15 @@ vector_store = FAISS.from_documents(documents, embeddings)
 vector_store.save_local('vector_stores/text_faiss')
 
 print("Training complete.")
+
+# --- Reload Models ---
+try:
+    response = requests.post("http://127.0.0.1:8000/api/reload-models")
+    # response = requests.post("https://chat.momsandkidsworld.com/api/reload-models")
+    if response.status_code == 200:
+        print("Models reloaded successfully.")
+    else:
+        print(f"Failed to reload models. Status code: {response.status_code}")
+except requests.exceptions.ConnectionError as e:
+    print(f"Failed to connect to the server: {e}")
+    print("\nTo load the new data into the running application, send a POST request to the /api/reload-models endpoint.")
