@@ -39,9 +39,9 @@ app.include_router(image_routes.router, tags=["Images"])
 async def login_page():
     return FileResponse(str(BASE_DIR / "login.html"))
 
-@app.get("/signup.html", response_class=HTMLResponse)
-async def signup_page():
-    return FileResponse(str(BASE_DIR / "signup.html"))
+# @app.get("/signup.html", response_class=HTMLResponse)
+# async def signup_page():
+#     return FileResponse(str(BASE_DIR / "signup.html"))
 
 # Static files
 app.mount("/product-image", StaticFiles(directory=settings.PRODUCT_IMAGES_PATH), name="product-image")
