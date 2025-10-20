@@ -34,6 +34,15 @@ app.include_router(chat_routes.router, tags=["Chat"])
 app.include_router(product_routes.router, tags=["Products"])
 app.include_router(image_routes.router, tags=["Images"])
 
+# ADD THESE 2 LINES:
+@app.get("/login.html", response_class=HTMLResponse)
+async def login_page():
+    return FileResponse(str(BASE_DIR / "login.html"))
+
+@app.get("/signup.html", response_class=HTMLResponse)
+async def signup_page():
+    return FileResponse(str(BASE_DIR / "signup.html"))
+
 # Static files
 app.mount("/product-image", StaticFiles(directory=settings.PRODUCT_IMAGES_PATH), name="product-image")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
