@@ -40,7 +40,7 @@ class Settings:
     
     
     # Google Gemini for Transcription
-    TRANSCRIPTION_MODEL_NAME = "gemini-1.5-flash-latest"
+    TRANSCRIPTION_MODEL_NAME = "gemini-pro"
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     
     
