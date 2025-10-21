@@ -39,11 +39,6 @@ class Settings:
     FALLBACK_LLM_BASE_URL = "https://api.fireworks.ai/inference/v1"
     
     
-    # Google Gemini for Transcription
-    TRANSCRIPTION_MODEL_NAME = "gemini-2.5-flash-lite"
-    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    
-    
     # Ollama (uncomment to use)
     # LLM_MODEL = "mistral:latest"
     # LLM_BASE_URL = "http://localhost:11434/v1"
