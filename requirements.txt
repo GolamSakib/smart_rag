@@ -20,4 +20,3 @@ google-generativeai
 langchain-google-genai
 bcrypt
 itsdangerous
-pydub
