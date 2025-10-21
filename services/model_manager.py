@@ -12,6 +12,8 @@ from config.settings import settings
 from typing import Optional
 import tempfile
 import os
+from pydub import AudioSegment
+import io
 
 
 class ModelManager:
@@ -137,6 +139,25 @@ class ModelManager:
         """Transcribes audio to text using audio bytes."""
         model = self.get_gemini_transcriber()
         print(f"Transcribing audio with mime_type: {mime_type}")
+
+        if mime_type == 'video/mp4':
+            try:
+                # Load the audio from the bytes buffer
+                audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="mp4")
+                
+                # Export as WAV to an in-memory buffer
+                wav_buffer = io.BytesIO()
+                audio.export(wav_buffer, format="wav")
+                wav_buffer.seek(0)
+                
+                audio_bytes = wav_buffer.read()
+                mime_type = "audio/wav"
+                print("Successfully converted video/mp4 to audio/wav")
+
+            except Exception as e:
+                print(f"Error during audio conversion: {e}")
+                # Fallback to original bytes if conversion fails
+                pass
 
         # The audio data is passed directly to the model, avoiding file uploads.
         response = model.generate_content(
