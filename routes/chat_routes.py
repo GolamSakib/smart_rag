@@ -402,7 +402,7 @@ async def receive_webhook(request: Request):
                                 content_type = audio_response.headers.get('content-type')
                                 print(f"Audio content-type: {content_type}")  # Log MIME type for debugging
                                 # Validate supported MIME types
-                                supported_mime_types = ['audio/mpeg', 'audio/wav', 'audio/aac', 'audio/flac', 'audio/mp4', 'audio/ogg']
+                                supported_mime_types = ['audio/mpeg', 'audio/wav', 'audio/aac', 'audio/flac', 'audio/mp4', 'audio/ogg','video/mp4']
                                 if content_type not in supported_mime_types:
                                     print(f"Unsupported audio MIME type: {content_type}")
                                     send_to_facebook(sender_id, "দুঃখিত, এই অডিও ফরম্যাট সমর্থিত নয়। দয়া করে MP3, WAV, AAC, FLAC, MP4, বা OGG ফরম্যাটে পাঠান।")
