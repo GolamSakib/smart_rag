@@ -17,18 +17,15 @@ from datetime import datetime,timedelta
 from services.model_manager import model_manager
 from config.settings import settings
 from services.database_service import db_service
-
-
-
-
+import tempfile
+import shutil
+import os
+import mimetypes
 
 
 # Keep a small in-memory cache to avoid duplicate processing
 processed_messages = set()
-
 router = APIRouter()
-
-
 @router.post("/api/reload-models")
 async def reload_models():
     """
@@ -40,15 +37,12 @@ async def reload_models():
         return JSONResponse(content={"message": "Models reloaded successfully."})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reload models: {str(e)}")
-
-
 # In-memory store for per-session memory
 session_memories = defaultdict(lambda: {
     "memory": ConversationBufferMemory(memory_key="chat_history", return_messages=True),
     "last_products": [],  # Store last retrieved products
     "message_count": 0    # Track number of messages in the session
 })
-
 # Updated Prompt template with discount calculation rule
 from langchain.prompts import PromptTemplate
 
@@ -139,8 +133,6 @@ prompt = PromptTemplate(
         "ব্যবহারকারী: {user_query}\nবট: "
     )
 )
-
-
 def validate_offer_price(response: str, products: List[dict]) -> str:
     """
     Validate the offered price in the bot's response to ensure it is not below the marginal price.
@@ -148,11 +140,9 @@ def validate_offer_price(response: str, products: List[dict]) -> str:
     """
     if not products:
         return response
-    
     # Assume the first product is the most relevant
     marginal_price = float(products[0]["marginal_price"])
     print(f"Marginal price of the most relevant product: {marginal_price}")
-    
     # Extract the offered price from the response (assuming format like "[number] টাকা")
     match = re.search(r'(\d+\.?\d*)\s*টাকা', response)
     if match:
@@ -160,9 +150,7 @@ def validate_offer_price(response: str, products: List[dict]) -> str:
         if offered_price < marginal_price:
             # Replace the offered price with the marginal price
             response = re.sub(r'\d+\.?\d*\s*টাকা', f"{int(marginal_price)} টাকা", response)
-    
     return response
-
 def add_to_google_sheet(phone_number: str):
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -179,39 +167,41 @@ def add_to_google_sheet(phone_number: str):
 @router.post("/api/chat")
 async def chat(
     images: Optional[List[UploadFile]] = File(None),
+    audio: Optional[UploadFile] = File(None),
     text: Optional[str] = Form(None),
     session_id: Optional[str] = Form(None)
-):  
-    # bot_response = "Hello"
-    # return JSONResponse(content={
-    #     "reply": bot_response,
-    #     "related_products": [],
-    #     "session_id": session_id
-    # })
-    if not images and not text:
-        return JSONResponse(status_code=400, content={"error": "At least one image or text input is required"})
-    
-
-
-    
+):
+    if not images and not text and not audio:
+        return JSONResponse(status_code=400, content={"error": "At least one image, audio, or text input is required"})
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
     memory = session_data["memory"]
     retrieved_products = session_data["last_products"]
     session_data["message_count"] += 1  # Increment message count
-
-    # Define query early to allow conditional logic
-    user_query = text.strip() if text else "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
-
+    user_query = ""
+    if audio:
+        try:
+            audio_bytes = await audio.read()
+            mime_type = audio.content_type
+            user_query = model_manager.transcribe_audio(audio_bytes=audio_bytes, mime_type=mime_type)
+            print(f"Transcribed query: {user_query}")
+        except Exception as e:
+            print(f"Error during audio transcription: {e}")
+            user_query = "" # Or some other handling
+        finally:
+            if audio:
+                await audio.close()
+    if text:
+        user_query = f"{user_query}\n{text.strip()}" if user_query else text.strip()
+    if not user_query and images:
+        user_query = "আপলোড করা পণ্যগুলোর নাম এবং মূল্য প্রদান করুন।"
     # Image search - Process images FIRST, before checking for greetings
     if images:
         retrieved_products = []
         image_index = model_manager.get_image_index()
         image_metadata = model_manager.get_image_metadata()
-        
         if image_index is None or not image_metadata:
             return JSONResponse(status_code=500, content={"error": "Image search not available"})
-            
         for image_file in images:
             image = Image.open(image_file.file)
             image_embedding = model_manager.get_image_embedding(image)
@@ -220,7 +210,6 @@ async def chat(
         session_data["last_products"] = retrieved_products
 
     print("retrieved_products:", retrieved_products)
-
     # Handle greeting/price query for first-time users with no product context
     # CHECK THIS AFTER image processing but BEFORE text search
     if not retrieved_products and any(k in user_query.lower() for k in ["pp", "price", "assalamu alaiikum", "salam", "আসসালামু আলাইকুম","প্রাইজ","প্রাইস কত","দাম", "মূল্য", "hi", "hello", "hey", "হাই", "হ্যালো", "হেলো", ".", "😊", "😂", "❤️", "👍", "🙏", "🤩", "😁", "😞", "🔥", "✨", "🎉"]):
@@ -230,18 +219,15 @@ async def chat(
             "related_products": [],
             "session_id": session_id
         })
-
     # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
     if text:
         # text_vector_store = model_manager.get_text_vector_store()
         # if text_vector_store is None:
-        #     return JSONResponse(status_code=500, content={"error": "Text search not available"})
-            
+        #     return JSONResponse(status_code=500, content={"error": "Text search not available"})            
         # docs = text_vector_store.similarity_search(text, k=1)
         # for doc in docs:
         #     retrieved_products.append(doc.metadata)
         session_data["last_products"] = retrieved_products
-
     # Remove duplicates
     seen_products = set()
     unique_products = []
@@ -251,20 +237,17 @@ async def chat(
             seen_products.add(identifier)
             unique_products.append(product)
     retrieved_products = unique_products
-
     # Build context
     context = "\nAvailable products:\n"
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
     print("Context for LLM:", context)
-
     # Check for phone number and save to Google Sheet
     phone_pattern = r'(?:\d{8,11}|[০-৯]{8,11})'
     match = re.search(phone_pattern, user_query)
     if match:
         phone_number = match.group(0)
         add_to_google_sheet(phone_number)
-
     llm = model_manager.get_llm()
     chain = RunnableSequence(prompt | llm)
     chat_history = memory.load_memory_variables({})["chat_history"]
@@ -283,9 +266,7 @@ async def chat(
         except Exception as fallback_e:
             print(f"Fallback LLM also failed: {fallback_e}")
             bot_response = "দুঃখিত, এই মুহূর্তে আমি আপনার অনুরোধটি প্রক্রিয়া করতে পারছি না। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন।"
-
     print("Raw bot response:", bot_response)
-
     # Increment message count in database
     try:
         with db_service.get_cursor() as (cursor, connection):
@@ -293,10 +274,8 @@ async def chat(
             connection.commit()
     except Exception as e:
         print(f"Error incrementing message count: {e}")
-
     # Save to memory
     memory.save_context({"user_query": user_query}, {"output": bot_response})
-
     # Check if message count has reached 3 and clear memory if so
     if session_data["message_count"] >= 30:
         session_memories[session_id] = {
@@ -305,7 +284,6 @@ async def chat(
             "message_count": 0
         }
         print(f"Session memory cleared for session_id: {session_id} after 15 messages")
-
     return JSONResponse(content={
         "reply": bot_response,
         "related_products": [{k: v for k, v in product.items() if k != "marginal_price"} for product in retrieved_products],
@@ -358,9 +336,6 @@ def mark_message_seen(recipient_id: str):
     if response.status_code != 200:
         print(f"Error marking message seen: {response.text}")
         
-
-
-
 @router.get("/webhook")
 async def verify_webhook(request: Request):
     mode = request.query_params.get("hub.mode")
@@ -406,20 +381,42 @@ async def receive_webhook(request: Request):
             attachments = message_data["message"].get("attachments", [])
             if attachments:
                 for idx, attachment in enumerate(attachments):
-                    if attachment["type"] == "image":
+                    attachment_type = attachment.get("type")
+                    if attachment_type == "image":
                         image_url = attachment["payload"]["url"]
                         async with httpx.AsyncClient() as client:
                             image_response = await client.get(image_url)
                             if image_response.status_code == 200:
                                 image_content = image_response.content
                                 files.append(
-                                    (
-                                        "images",  
-                                        (f"image_{sender_id}_{idx}.jpg", image_content, "image/jpeg")
-                                    )
+                                    ("images", (f"image_{sender_id}_{idx}.jpg", image_content, "image/jpeg"))
                                 )
                             else:
-                                print(f" Failed to download image: {image_response.status_code}")
+                                print(f"Failed to download image: {image_response.status_code}")
+                    elif attachment_type == "audio":
+                        audio_url = attachment["payload"]["url"]
+                        async with httpx.AsyncClient() as client:
+                            audio_response = await client.get(audio_url)
+                            if audio_response.status_code == 200:
+                                audio_content = audio_response.content
+                                content_type = audio_response.headers.get('content-type')
+                                print(f"Audio content-type: {content_type}")  # Log MIME type for debugging
+                                # Validate supported MIME types
+                                supported_mime_types = ['audio/mpeg', 'audio/wav', 'audio/aac', 'audio/flac', 'audio/mp4', 'audio/ogg']
+                                if content_type not in supported_mime_types:
+                                    print(f"Unsupported audio MIME type: {content_type}")
+                                    send_to_facebook(sender_id, "দুঃখিত, এই অডিও ফরম্যাট সমর্থিত নয়। দয়া করে MP3, WAV, AAC, FLAC, MP4, বা OGG ফরম্যাটে পাঠান।")
+                                    continue
+                                suffix = mimetypes.guess_extension(content_type) or ".ogg"  # Default to .ogg for audio/ogg
+                                filename = f"audio_{sender_id}_{idx}{suffix}"
+                                mime_type = content_type
+                                files.append(
+                                    ("audio", (filename, audio_content, mime_type))
+                                )
+                            else:
+                                print(f"Failed to download audio: {audio_response.status_code}")
+                                send_to_facebook(sender_id, "দুঃখিত, অডিও ডাউনলোড করতে সমস্যা হয়েছে।")
+                                continue
             
 
             if not incoming_msg and not files:

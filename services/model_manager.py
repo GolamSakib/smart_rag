@@ -7,8 +7,11 @@ import torch
 from langchain_community.vectorstores import FAISS as LangchainFAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
+import google.generativeai as genai
 from config.settings import settings
 from typing import Optional
+import tempfile
+import os
 
 
 class ModelManager:
@@ -31,7 +34,8 @@ class ModelManager:
             'text_vector_store': None,
             'image_metadata': None,
             'llm': None,
-            'fallback_llm': None
+            'fallback_llm': None,
+            'gemini_transcriber': None
         }
     
     def get_clip_model(self):
@@ -118,6 +122,34 @@ class ModelManager:
                 temperature=settings.LLM_TEMPERATURE
             )
         return self._models['fallback_llm']
+
+    def get_gemini_transcriber(self):
+        """Lazy load Gemini model for transcription"""
+        if self._models['gemini_transcriber'] is None:
+            print("Loading Gemini for transcription...")
+            if not settings.GOOGLE_API_KEY:
+                raise Exception("GOOGLE_API_KEY is not set.")
+            genai.configure(api_key=settings.GOOGLE_API_KEY)
+            self._models['gemini_transcriber'] = genai.GenerativeModel(settings.TRANSCRIPTION_MODEL_NAME)
+        return self._models['gemini_transcriber']
+
+    def transcribe_audio(self, audio_bytes: bytes, mime_type: str) -> str:
+        """Transcribes audio to text using audio bytes."""
+        model = self.get_gemini_transcriber()
+        print(f"Transcribing audio with mime_type: {mime_type}")
+
+        # The audio data is passed directly to the model, avoiding file uploads.
+        response = model.generate_content(
+            [
+                "Transcribe this audio to text.",
+                {
+                    "mime_type": mime_type,
+                    "data": audio_bytes
+                }
+            ]
+        )
+        
+        return response.text
     
     def get_image_embedding(self, image: Image.Image) -> np.ndarray:
         """Generate image embedding using CLIP model"""
