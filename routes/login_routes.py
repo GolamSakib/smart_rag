@@ -26,7 +26,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
     if user and bcrypt.checkpw(password.encode('utf-8'), user['password'].encode('utf-8')):
         # Create a session token
         session_token = serializer.dumps(user['id'])
-        response = JSONResponse(content={"message": "Login successful"})
+        response = RedirectResponse(url="/", status_code=302)
         response.set_cookie(key="session", value=session_token)
         return response
     else:
