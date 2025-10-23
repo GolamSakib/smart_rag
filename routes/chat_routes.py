@@ -197,6 +197,11 @@ async def chat(
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
     memory = session_data["memory"]
+    
+    # Clear session products immediately if images are uploaded
+    if images:
+        session_data["last_products"] = []
+    
     # Initialize retrieved_products - will be set properly in image or text processing
     retrieved_products = []
     session_data["message_count"] += 1  # Increment message count
@@ -208,7 +213,6 @@ async def chat(
     if images:
         # Clear any previous products from session when processing new images
         retrieved_products = []
-        session_data["last_products"] = []
         
         image_index = model_manager.get_image_index()
         image_metadata = model_manager.get_image_metadata()
@@ -224,6 +228,8 @@ async def chat(
         session_data["last_products"] = retrieved_products
 
     print("retrieved_products:", retrieved_products)
+    print(f"Number of images uploaded: {len(images) if images else 0}")
+    print(f"Session last_products before processing: {session_data.get('last_products', [])}")
 
     # Handle greeting/price query for first-time users with no product context
     # CHECK THIS AFTER image processing but BEFORE text search
@@ -258,8 +264,13 @@ async def chat(
             unique_products.append(product)
     retrieved_products = unique_products
 
-    # Build context
+    # Build context - ensure only single product for image uploads
     context = "\nAvailable products:\n"
+    if images and len(retrieved_products) > 1:
+        # If images were uploaded but somehow multiple products exist, take only the first one
+        retrieved_products = retrieved_products[:1]
+        print(f"WARNING: Multiple products detected for image upload, taking only first: {retrieved_products}")
+    
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
     print("Context for LLM:", context)
