@@ -197,7 +197,10 @@ async def chat(
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
     memory = session_data["memory"]
-    retrieved_products = session_data["last_products"]
+    if images:
+        retrieved_products = []
+    else:
+        retrieved_products = session_data["last_products"]
     session_data["message_count"] += 1  # Increment message count
 
     # Define query early to allow conditional logic
@@ -205,7 +208,6 @@ async def chat(
 
     # Image search - Process images FIRST, before checking for greetings
     if images:
-        retrieved_products = []
         image_index = model_manager.get_image_index()
         image_metadata = model_manager.get_image_metadata()
         
