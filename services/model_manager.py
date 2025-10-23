@@ -126,7 +126,7 @@ class ModelManager:
         """Lazy load YOLO object detector"""
         if self._models['object_detector'] is None:
             print("Loading YOLO object detector...")
-            self._models['object_detector'] = YOLO("yolov8n.pt")
+            self._models['object_detector'] = YOLO("yolov8l.pt")
         return self._models['object_detector']
     
     def get_image_embedding(self, image: Image.Image) -> np.ndarray:

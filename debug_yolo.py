@@ -16,7 +16,7 @@ def test_yolo_detection():
     
     # Load YOLO model
     print("Loading YOLO model...")
-    model = YOLO("yolov8n.pt")
+    model = YOLO("yolov8l.pt")
     
     # Target classes
     TARGET_CLASSES = {24, 26, 28}  # backpack (24), handbag (26), suitcase (28)
@@ -100,7 +100,7 @@ def test_with_different_confidence():
     print("\n🎯 Testing with different confidence thresholds")
     print("=" * 50)
     
-    model = YOLO("yolov8n.pt")
+    model = YOLO("yolov8l.pt")
     TARGET_CLASSES = {24, 26, 28}  # backpack (24), handbag (26), suitcase (28)
     
     # Test on first image
