@@ -140,23 +140,23 @@ class ModelManager:
         results = object_detector(image)
         
         # Process detection results
-        embeddings = []
         for result in results:
             boxes = result.boxes
-            if boxes is not None and boxes.shape[0] > 0:
+            if boxes is not None and boxes.shape[0] > 0:  # If objects detected
                 for i in range(boxes.shape[0]):
-                    cls = boxes.cls[i].item()
-                    if cls in self.TARGET_CLASSES:
+                    cls = boxes.cls[i].item()  # Class ID
+                    if cls in self.TARGET_CLASSES:  # Filter for handbag (23) or shoe (40)
                         x1, y1, x2, y2 = map(int, boxes.xyxy[i])
                         cropped_image = image.crop((x1, y1, x2, y2))
+                        
+                        # Generate embedding for cropped object
                         model = self.get_clip_model()
                         processor = self.get_clip_processor()
                         inputs = processor(images=cropped_image, return_tensors="pt")
                         with torch.no_grad():
                             embedding = model.get_image_features(**inputs)
-                        embeddings.append(embedding.cpu().numpy().flatten())
-        print(f"Generated {len(embeddings)} embeddings")
-        return embeddings
+                            print(f"Generated embedding for cropped object: {cls}")
+                        return embedding.cpu().numpy().flatten()
         
         # If no target objects detected, fall back to processing the entire image
         print("No target objects detected, processing entire image")
