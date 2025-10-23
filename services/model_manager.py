@@ -97,15 +97,16 @@ class ModelManager:
         return self._models['image_metadata']
     
     def get_llm(self):
-        """Always load LLM"""
-        print(f"Loading Grok LLM: {settings.LLM_MODEL}...")
-        self._models['llm'] = ChatOpenAI(
-            model=settings.LLM_MODEL,
-            openai_api_key=settings.LLM_API_KEY,
-            openai_api_base=settings.LLM_BASE_URL,
-            max_tokens=settings.LLM_MAX_TOKENS,
-            temperature=settings.LLM_TEMPERATURE
-        )
+        """Lazy load LLM"""
+        if self._models['llm'] is None:
+            print(f"Loading Grok LLM: {settings.LLM_MODEL}...")
+            self._models['llm'] = ChatOpenAI(
+                model=settings.LLM_MODEL,
+                openai_api_key=settings.LLM_API_KEY,
+                openai_api_base=settings.LLM_BASE_URL,
+                max_tokens=settings.LLM_MAX_TOKENS,
+                temperature=settings.LLM_TEMPERATURE
+            )
         return self._models['llm']
     
     def get_fallback_llm(self):
