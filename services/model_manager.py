@@ -34,6 +34,7 @@ class ModelManager:
             'llm': None,
             'fallback_llm': None
         }
+        self.TARGET_CLASSES = {24, 26, 28}
     
     def get_clip_model(self):
         """Lazy load CLIP model for image processing"""
