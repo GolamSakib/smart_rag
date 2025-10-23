@@ -203,7 +203,6 @@ async def chat(
         session_data["last_products"] = []
     
     # Initialize retrieved_products - will be set properly in image or text processing
-    retrieved_products = []
     session_data["message_count"] += 1  # Increment message count
 
     # Define query early to allow conditional logic
