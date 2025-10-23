@@ -22,7 +22,7 @@ os.makedirs('vector_stores/text_faiss', exist_ok=True)
 # --- Image Indexing with YOLO Object Detection ---
 
 # Load YOLO object detector
-object_detector = YOLO("yolov8n.pt")
+object_detector = YOLO("yolov8m.pt")
 TARGET_CLASSES = {24, 26, 28}  # backpack (24), handbag (26), suitcase (28)
 
 # Load CLIP model
@@ -60,7 +60,7 @@ for product in products:
                 if boxes is not None and boxes.shape[0] > 0:  # If objects detected
                     for i in range(boxes.shape[0]):
                         cls = boxes.cls[i].item()  # Class ID
-                        if cls in TARGET_CLASSES:  # Filter for handbag (23) or shoe (40)
+                        if cls in TARGET_CLASSES:
                             x1, y1, x2, y2 = map(int, boxes.xyxy[i])
                             cropped_image = image.crop((x1, y1, x2, y2))
                             
