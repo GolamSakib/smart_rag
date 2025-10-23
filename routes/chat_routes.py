@@ -17,9 +17,7 @@ from datetime import datetime,timedelta
 from services.model_manager import model_manager
 from config.settings import settings
 from services.database_service import db_service
-
-
-
+from langchain.prompts import PromptTemplate
 
 
 
@@ -50,7 +48,6 @@ session_memories = defaultdict(lambda: {
 })
 
 # Updated Prompt template with discount calculation rule
-from langchain.prompts import PromptTemplate
 
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
@@ -197,13 +194,7 @@ async def chat(
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
     memory = session_data["memory"]
-    
-    # Clear session products immediately if images are uploaded
-    if images:
-        session_data["last_products"] = []
-    
-    # Initialize retrieved_products - will be set properly in image or text processing
-    retrieved_products = []
+    retrieved_products = session_data["last_products"]
     session_data["message_count"] += 1  # Increment message count
 
     # Define query early to allow conditional logic
@@ -211,9 +202,7 @@ async def chat(
 
     # Image search - Process images FIRST, before checking for greetings
     if images:
-        # Clear any previous products from session when processing new images
         retrieved_products = []
-        
         image_index = model_manager.get_image_index()
         image_metadata = model_manager.get_image_metadata()
         
@@ -228,8 +217,6 @@ async def chat(
         session_data["last_products"] = retrieved_products
 
     print("retrieved_products:", retrieved_products)
-    print(f"Number of images uploaded: {len(images) if images else 0}")
-    print(f"Session last_products before processing: {session_data.get('last_products', [])}")
 
     # Handle greeting/price query for first-time users with no product context
     # CHECK THIS AFTER image processing but BEFORE text search
@@ -242,9 +229,7 @@ async def chat(
         })
 
     # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
-    if text and not images:  # Only run text search if no images were uploaded
-        # Use products from session history for text-only requests
-        retrieved_products = session_data["last_products"]
+    if text:
         # text_vector_store = model_manager.get_text_vector_store()
         # if text_vector_store is None:
         #     return JSONResponse(status_code=500, content={"error": "Text search not available"})
@@ -252,7 +237,7 @@ async def chat(
         # docs = text_vector_store.similarity_search(text, k=1)
         # for doc in docs:
         #     retrieved_products.append(doc.metadata)
-        # session_data["last_products"] = retrieved_products
+        session_data["last_products"] = retrieved_products
 
     # Remove duplicates
     seen_products = set()
@@ -264,9 +249,8 @@ async def chat(
             unique_products.append(product)
     retrieved_products = unique_products
 
-    # Build context - ensure only single product for image uploads
+    # Build context
     context = "\nAvailable products:\n"
-
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
     print("Context for LLM:", context)
