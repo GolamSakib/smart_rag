@@ -98,9 +98,9 @@ class ModelManager:
     
     def get_llm(self):
         """Lazy load LLM"""
-        # if self._models['llm'] is None:
-        print(f"Loading Grok LLM: {settings.LLM_MODEL}...")
-        self._models['llm'] = ChatOpenAI(
+        if self._models['llm'] is None:
+            print(f"Loading Grok LLM: {settings.LLM_MODEL}...")
+            self._models['llm'] = ChatOpenAI(
                 model=settings.LLM_MODEL,
                 openai_api_key=settings.LLM_API_KEY,
                 openai_api_base=settings.LLM_BASE_URL,
