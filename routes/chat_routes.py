@@ -19,10 +19,6 @@ from config.settings import settings
 from services.database_service import db_service
 
 
-
-
-
-
 # Keep a small in-memory cache to avoid duplicate processing
 processed_messages = set()
 
@@ -50,7 +46,6 @@ session_memories = defaultdict(lambda: {
 })
 
 # Updated Prompt template with discount calculation rule
-from langchain.prompts import PromptTemplate
 
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
