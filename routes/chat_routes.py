@@ -266,11 +266,7 @@ async def chat(
 
     # Build context - ensure only single product for image uploads
     context = "\nAvailable products:\n"
-    if images and len(retrieved_products) > 1:
-        # If images were uploaded but somehow multiple products exist, take only the first one
-        retrieved_products = retrieved_products[:1]
-        print(f"WARNING: Multiple products detected for image upload, taking only first: {retrieved_products}")
-    
+
     for product in retrieved_products:
         context += f"- Name: {product['name']}, Price: {product['price']},Description: {product['description']} Link: {product['link']}\n"
     print("Context for LLM:", context)
