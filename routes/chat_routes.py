@@ -17,7 +17,9 @@ from datetime import datetime,timedelta
 from services.model_manager import model_manager
 from config.settings import settings
 from services.database_service import db_service
-from langchain.prompts import PromptTemplate
+
+
+
 
 
 
@@ -48,6 +50,7 @@ session_memories = defaultdict(lambda: {
 })
 
 # Updated Prompt template with discount calculation rule
+from langchain.prompts import PromptTemplate
 
 prompt = PromptTemplate(
     input_variables=["chat_history", "user_query", "context"],
