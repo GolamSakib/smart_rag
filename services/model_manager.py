@@ -9,6 +9,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_openai import ChatOpenAI
 from config.settings import settings
 from typing import Optional
+from ultralytics import YOLO
 
 
 class ModelManager:
@@ -119,11 +120,45 @@ class ModelManager:
             )
         return self._models['fallback_llm']
     
+    def get_object_detector(self):
+        """Lazy load YOLO object detector"""
+        if self._models['object_detector'] is None:
+            print("Loading YOLO object detector...")
+            self._models['object_detector'] = YOLO("yolov8l.pt")
+        return self._models['object_detector']
+    
     def get_image_embedding(self, image: Image.Image) -> np.ndarray:
-        """Generate image embedding using CLIP model"""
+        """Generate image embedding using YOLO object detection + CLIP model"""
+        # Convert to RGB if needed
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Get object detector and detect objects
+        object_detector = self.get_object_detector()
+        results = object_detector(image)
+        
+        # Process detection results
+        for result in results:
+            boxes = result.boxes
+            if boxes is not None and boxes.shape[0] > 0:  # If objects detected
+                for i in range(boxes.shape[0]):
+                    cls = boxes.cls[i].item()  # Class ID
+                    if cls in self.TARGET_CLASSES:  # Filter for handbag (23) or shoe (40)
+                        x1, y1, x2, y2 = map(int, boxes.xyxy[i])
+                        cropped_image = image.crop((x1, y1, x2, y2))
+                        
+                        # Generate embedding for cropped object
+                        model = self.get_clip_model()
+                        processor = self.get_clip_processor()
+                        inputs = processor(images=cropped_image, return_tensors="pt")
+                        with torch.no_grad():
+                            embedding = model.get_image_features(**inputs)
+                        return embedding.cpu().numpy().flatten()
+        
+        # If no target objects detected, fall back to processing the entire image
+        print("No target objects detected, processing entire image")
         model = self.get_clip_model()
         processor = self.get_clip_processor()
-        
         inputs = processor(images=image, return_tensors="pt")
         with torch.no_grad():
             embedding = model.get_image_features(**inputs)
