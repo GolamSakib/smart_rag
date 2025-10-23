@@ -197,10 +197,8 @@ async def chat(
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
     memory = session_data["memory"]
-    if images:
-        retrieved_products = []
-    else:
-        retrieved_products = session_data["last_products"]
+    # Initialize retrieved_products - will be set properly in image or text processing
+    retrieved_products = []
     session_data["message_count"] += 1  # Increment message count
 
     # Define query early to allow conditional logic
@@ -208,6 +206,10 @@ async def chat(
 
     # Image search - Process images FIRST, before checking for greetings
     if images:
+        # Clear any previous products from session when processing new images
+        retrieved_products = []
+        session_data["last_products"] = []
+        
         image_index = model_manager.get_image_index()
         image_metadata = model_manager.get_image_metadata()
         
@@ -234,7 +236,9 @@ async def chat(
         })
 
     # Text search - now this block runs ONLY if the greeting condition was NOT met, and if 'text' is provided
-    if text:
+    if text and not images:  # Only run text search if no images were uploaded
+        # Use products from session history for text-only requests
+        retrieved_products = session_data["last_products"]
         # text_vector_store = model_manager.get_text_vector_store()
         # if text_vector_store is None:
         #     return JSONResponse(status_code=500, content={"error": "Text search not available"})
@@ -242,7 +246,7 @@ async def chat(
         # docs = text_vector_store.similarity_search(text, k=1)
         # for doc in docs:
         #     retrieved_products.append(doc.metadata)
-        session_data["last_products"] = retrieved_products
+        # session_data["last_products"] = retrieved_products
 
     # Remove duplicates
     seen_products = set()
