@@ -22,7 +22,7 @@ os.makedirs('vector_stores/text_faiss', exist_ok=True)
 # --- Image Indexing with YOLO Object Detection ---
 
 # Load YOLO object detector
-object_detector = YOLO("yolov8m.pt")
+object_detector = YOLO("yolov8l.pt")
 TARGET_CLASSES = {24, 26, 28}  # backpack (24), handbag (26), suitcase (28)
 
 # Load CLIP model

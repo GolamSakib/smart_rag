@@ -7,7 +7,7 @@ from ultralytics import YOLO
 
 def find_correct_class_ids():
     """Find the correct class IDs for our target objects"""
-    model = YOLO("yolov8n.pt")
+    model = YOLO("yolov8l.pt")
     class_names = model.names
     
     print("🔍 YOLO Class Names for Bags, Shoes, and Suitcases:")
