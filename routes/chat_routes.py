@@ -191,6 +191,9 @@ async def chat(
     if not images and not text:
         return JSONResponse(status_code=400, content={"error": "At least one image or text input is required"})
     
+
+
+    
     session_id = session_id or str(uuid4())
     session_data = session_memories[session_id]
     memory = session_data["memory"]
