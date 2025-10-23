@@ -33,7 +33,8 @@ class ModelManager:
             'text_vector_store': None,
             'image_metadata': None,
             'llm': None,
-            'fallback_llm': None
+            'fallback_llm': None,
+            'object_detector': None
         }
         self.TARGET_CLASSES = {24, 26, 28}
     
