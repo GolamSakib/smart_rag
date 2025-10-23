@@ -17,6 +17,7 @@ class ModelManager:
     
     _instance = None
     _models = {}
+    TARGET_CLASSES = {23, 40}  # handbag and shoe
     
     def __new__(cls):
         if cls._instance is None:
@@ -35,7 +36,7 @@ class ModelManager:
             'fallback_llm': None,
             'object_detector': None
         }
-        self.TARGET_CLASSES = {24, 26, 28}  # backpack (24), handbag (26), suitcase (28)
+        self.TARGET_CLASSES = {24, 26, 28}
     
     def get_clip_model(self):
         """Lazy load CLIP model for image processing"""
@@ -194,7 +195,6 @@ class ModelManager:
         self.get_image_metadata()
         self.get_llm()
         self.get_fallback_llm()
-        self.get_object_detector()
     
     def clear_models(self):
         """Clear all loaded models to free memory"""
