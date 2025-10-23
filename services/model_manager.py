@@ -17,6 +17,7 @@ class ModelManager:
     
     _instance = None
     _models = {}
+    TARGET_CLASSES = {23, 40}  # handbag and shoe
     
     def __new__(cls):
         if cls._instance is None:
